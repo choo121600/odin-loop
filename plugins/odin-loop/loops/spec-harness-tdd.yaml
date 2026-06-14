@@ -1,0 +1,111 @@
+# =============================================================================
+# Odin-Loop · loop definition
+# -----------------------------------------------------------------------------
+# A loop is DATA, not code. The engine (skills/loop-engine) reads this file and
+# executes each stage in order, advancing only when a stage's `gate` passes.
+#
+# Schema:
+#   name            : unique loop id (matches filename)
+#   version         : integer, bump on breaking edits
+#   description     : one-line summary
+#   max_iterations  : global safety cap on total stage runs (loopback guard)
+#   stages[]        :
+#     id            : unique stage id
+#     title         : human label
+#     goal          : what this stage must achieve (intent)
+#     prompt        : instructions the engine follows to execute the stage
+#     consumes      : artifacts this stage reads   (hints)
+#     produces      : artifacts this stage writes  (hints)
+#     gate          : the advance condition
+#       mode        : ai        -> engine judges, auto-advances on pass
+#                     ai+human  -> engine judges, then PAUSES for human approval
+#                     human     -> human decides directly
+#       check       : the condition to evaluate (a testable assertion)
+#       on_fail     : stage id to jump to when the gate fails
+#                     (omit -> retry this same stage)
+# =============================================================================
+
+name: spec-harness-tdd
+version: 1
+description: 요구사항 구체화 → 하니스 설계 → 하니스 검증 → 구현 → 테스트
+max_iterations: 12
+
+stages:
+  # ---------------------------------------------------------------------------
+  - id: interview
+    title: Deep Interview (Huginn)
+    goal: 모호한 요청을 관찰 가능하고 테스트 가능한 acceptance criteria 목록으로 구체화한다
+    prompt: |
+      사용자의 요청을 깊이 인터뷰한다.
+      - 한 번에 1~2개의 핵심 질문만 던진다 (사용자를 지치게 하지 않는다).
+      - 답을 받을 때마다 spec.md 를 갱신한다.
+      - 각 요구사항을 "관찰 가능하고 테스트 가능한" acceptance criteria 로 환원한다.
+      - 가정/비범위(out of scope)/엣지케이스를 명시한다.
+      모든 항목이 testable 해지면 인터뷰를 종료한다 (= gate).
+    produces: [spec.md]
+    gate:
+      mode: ai+human
+      check: >
+        spec.md 의 모든 요구사항이 testable 한 acceptance criteria 로 표현되었고,
+        모호하거나 해석의 여지가 있는 항목이 남아있지 않다.
+
+  # ---------------------------------------------------------------------------
+  - id: harness-design
+    title: Harness Design
+    goal: spec 의 각 acceptance criteria 를 실행 가능한 테스트 하니스로 번역한다
+    prompt: |
+      spec.md 의 각 criteria 마다 대응하는 자동화 테스트를 작성한다.
+      - 이 시점에 구현(src)은 아직 없으므로 테스트는 실패하는 것이 정상이다.
+      - 테스트는 구현 세부사항이 아니라 "관찰 가능한 동작"을 검증해야 한다.
+      - criteria ↔ test 의 매핑을 분명히 남긴다.
+    consumes: [spec.md]
+    produces: [harness/]
+    gate:
+      mode: ai
+      check: >
+        spec.md 의 각 acceptance criteria 마다 최소 1개의 대응 테스트가 harness/ 에 존재한다.
+
+  # ---------------------------------------------------------------------------
+  - id: harness-verify
+    title: Harness Verification (Gungnir · 빗나가지 않는 창)
+    goal: 하니스 자체가 옳은지 검증한다 — 틀린 구현은 떨어뜨리고 옳은 구현은 통과시키는가
+    prompt: |
+      하니스의 "검증력"을 확인한다.
+      - known-bad stub(고의로 틀린 최소 구현)을 만들어 하니스를 돌린다.
+      - 최소 1개 테스트가 실패해야 한다. 모든 테스트가 무조건 통과한다면
+        그 하니스는 아무것도 검증하지 못하는 것이므로 결함이다.
+      - 결과를 harness-report.md 에 기록한다 (어떤 stub, 어떤 테스트가 실패).
+    consumes: [harness/]
+    produces: [harness-report.md]
+    gate:
+      mode: ai+human
+      check: >
+        known-bad stub 에서 최소 1개 테스트가 실패함이 harness-report.md 에 기록되어 있다.
+      on_fail: harness-design
+
+  # ---------------------------------------------------------------------------
+  - id: implement
+    title: Implement
+    goal: spec 과 검증된 하니스를 타겟으로 실제 구현을 작성한다
+    prompt: |
+      spec.md 를 만족하고 harness/ 의 테스트를 통과하도록 구현한다.
+      - 하니스를 통과시키기 위해 테스트를 약화/삭제하지 않는다.
+      - spec 에 없는 기능을 임의로 추가하지 않는다 (scope creep 방지).
+    consumes: [spec.md, harness/]
+    produces: [src/]
+    gate:
+      mode: ai
+      check: 프로젝트가 lint / 타입체크 / 빌드를 통과한다.
+
+  # ---------------------------------------------------------------------------
+  - id: test
+    title: Test with Harness
+    goal: 검증된 하니스로 구현을 최종 검증한다
+    prompt: |
+      harness/ 의 모든 테스트를 실행하고 결과를 보고한다.
+      실패 시 implement 로 돌아가 고친다 (테스트가 아니라 구현을 고친다).
+    consumes: [src/, harness/]
+    gate:
+      mode: ai
+      check: harness/ 의 모든 테스트가 통과한다.
+      on_fail: implement

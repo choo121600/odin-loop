@@ -1,0 +1,14 @@
+{
+  "name": "odin-loop",
+  "owner": {
+    "name": "choo121600",
+    "email": "choo121600@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "odin-loop",
+      "source": "./plugins/odin-loop",
+      "description": "Author, run, and refine custom AI dev workflow loops. Ships a deep-interview → harness → verify → implement → test loop, and lets you build your own loops as editable data."
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+# Odin-Loop
+
+[English](README.md) | **한국어**
+
+> 나만의 AI 개발 워크플로우 *루프*를 직접 만들고, 실행하고, 다듬는다 — 수정 가능한 데이터로.
+
+대부분의 "AI 개발 워크플로우" 도구는 **고정된 하나의 루프**를 강요합니다. Odin-Loop는
+루프 그 자체를 1급 시민, 즉 *수정 가능한 산출물*로 다룹니다 — 엔진이 읽고 실행하는 YAML
+파일이죠. 강력한 기본 루프가 함께 제공되며, `/odin new`로 자신만의 루프를 만들고 다듬을
+수 있습니다.
+
+```
+deep interview → harness design → harness verify → implement → test
+   (Huginn)                          (Gungnir)
+```
+
+이름은 신화에서 따왔고, 그대로 아키텍처에 매핑됩니다:
+
+| 신화 | 역할 | Odin-Loop에서 |
+| --- | --- | --- |
+| **오딘(Odin)** | 사냥을 이끄는 지혜의 추구자 | 루프를 구동하는 엔진 |
+| **후긴(Huginn, "사고")** | 추론의 까마귀 | deep-interview 단계 |
+| **무닌(Muninn, "기억")** | 기억의 까마귀 | 세션 마이닝 교정기 (`/odin refine`) |
+| **궁니르(Gungnir)** | 빗나가지 않는 창 | 하니스 검증 게이트 |
+
+## 기본 루프가 이렇게 설계된 이유
+
+- **deep interview 먼저** — AI 코딩 실패의 대부분은 코딩 실패가 아니라 *의도* 실패입니다.
+  인터뷰는 코드를 쓰기 전에 모호한 요청을 *테스트 가능한 acceptance criteria*로 바꿉니다.
+- **구현보다 하니스 먼저** — criteria가 실행 가능한 테스트가 되므로, "완료"에 객관적
+  정의가 생깁니다.
+- **하니스 자체를 검증 (궁니르)** — 대부분의 도구가 건너뛰는 단계입니다. 항상 통과하는
+  테스트는 아무것도 증명하지 못합니다. 고의로 틀린 stub을 돌려 *최소 1개 테스트가 실패*
+  하도록 요구함으로써, 하니스에 "이빨"이 있음을 증명합니다.
+- **그다음 구현하고 테스트** — 검증된 하니스를 타겟으로 구현하고, 실패 시 루프백하되
+  `max_iterations` 상한으로 제한합니다.
+
+## 설치
+
+```
+/plugin marketplace add choo121600/odin-loop
+/plugin install odin-loop@odin-loop
+```
+
+## 사용법
+
+```
+/odin run            # 런 시작 또는 이어가기 (사람 승인 게이트에서 멈춤)
+/odin step <stage>   # 특정 단계만 다시 실행
+/odin status         # 현재 런 상태 보기
+/odin list           # 사용 가능한 루프 목록
+/odin new            # 인터뷰를 통해 나만의 루프 작성
+/odin refine [loop]  # 과거 작업을 분석해 루프 수정안 제안 (무닌)
+```
+
+### 하이브리드 실행
+
+`/odin run`은 루프를 자동으로 진행하되, **`ai+human` 게이트에서 멈춰** 당신이 통제권을
+유지하게 합니다. 멈춘 단계를 승인하려면 `/odin run`을 다시 실행하면 되고, 수정이
+필요하면 그냥 피드백을 입력해 그 단계를 다시 돌리고 재검증하면 됩니다.
+
+### 무닌 — 스스로 다듬어지는 루프
+
+`/odin refine`은 당신의 Odin-Loop 런 기록과 Claude Code 세션 기록을 마이닝해, 당신이
+어디서 단계를 건너뛰거나 재작업하거나 루프백하는지 찾아낸 뒤 **루프 YAML에 대한 구체적인
+수정안**을 제안합니다 (예: "`implement` 단계가 자주 루프백함 → `interview` 게이트를
+강화"). 번들된 분석기는 집계 신호만 추출하며(메시지 내용은 절대 읽지 않음), **승인 없이는
+아무것도 적용되지 않습니다** — `/odin refine apply`로 수락합니다. 루프가 당신의 실제
+작업 방식으로부터 배웁니다.
+
+## 루프는 데이터다
+
+루프는 YAML 파일입니다 (전체 주석이 달린 스키마는
+[`plugins/odin-loop/loops/spec-harness-tdd.yaml`](plugins/odin-loop/loops/spec-harness-tdd.yaml)
+참고). 핵심만 보면:
+
+```yaml
+name: my-loop
+version: 1
+max_iterations: 12
+stages:
+  - id: design
+    goal: ...
+    gate:
+      mode: ai+human        # ai = 자동 진행 · ai+human = 승인 위해 멈춤
+      check: <전진하기 위한 testable 조건>
+      on_fail: <실패 시 돌아갈 stage id>   # 선택
+```
+
+기본 루프는 `loops/`에, 커스텀 루프는 프로젝트의 `.odin-loop/loops/`에 위치합니다.
+런 상태는 `.odin-loop/runs/`에 저장됩니다.
+
+## 상태
+
+`v0.2.0` — 엔진 + 기본 루프 + 커스텀 루프 작성 + 무닌(`/odin refine`) 세션 마이닝 교정.
+
+## 라이선스
+
+MIT
