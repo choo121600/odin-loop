@@ -42,6 +42,20 @@ deep interview → harness design → harness verify → implement → test
 /plugin install odin-loop@odin-loop
 ```
 
+## 빠른 시작
+
+첫 `/odin run` 시 Odin-Loop는 어떤 루프를 쓸지 묻고(기본 `spec-harness-tdd`) 딥
+인터뷰를 시작합니다 — 코드를 쓰기 전에 요청을 테스트 가능한 acceptance criteria로
+바꿉니다.
+
+```
+/odin run        # 활성 런 없음 → 루프 선택 후 인터뷰
+/odin status     # 런 위치 확인
+```
+
+모든 `ai+human` 게이트에서 멈춥니다. `/odin run`을 다시 실행하면 승인, 피드백을
+입력하면 그 단계를 수정합니다.
+
 ## 사용법
 
 ```
@@ -68,6 +82,12 @@ deep interview → harness design → harness verify → implement → test
 아무것도 적용되지 않습니다** — `/odin refine apply`로 수락합니다. 루프가 당신의 실제
 작업 방식으로부터 배웁니다.
 
+## 문서
+
+- [설계](docs/design.ko.md) — 아키텍처, loop-as-data 모델, 게이트·상태
+- [기능](docs/features.ko.md) — 모든 명령, 기본 루프, 무닌
+- [시나리오](docs/scenarios.ko.md) — 엔드투엔드 워크스루
+
 ## 루프는 데이터다
 
 루프는 YAML 파일입니다 (전체 주석이 달린 스키마는
@@ -87,12 +107,12 @@ stages:
       on_fail: <실패 시 돌아갈 stage id>   # 선택
 ```
 
-기본 루프는 `loops/`에, 커스텀 루프는 프로젝트의 `.odin-loop/loops/`에 위치합니다.
-런 상태는 `.odin-loop/runs/`에 저장됩니다.
+기본 루프는 `plugins/odin-loop/loops/`에, 커스텀 루프는 프로젝트의 `.odin-loop/loops/`에
+위치합니다. 런 상태는 `.odin-loop/runs/`에 저장됩니다.
 
 ## 상태
 
-`v0.2.0` — 엔진 + 기본 루프 + 커스텀 루프 작성 + 무닌(`/odin refine`) 세션 마이닝 교정.
+`v0.1.1` — 엔진 + 기본 루프 + 커스텀 루프 작성 + 무닌(`/odin refine`) 세션 마이닝 교정.
 
 ## 라이선스
 

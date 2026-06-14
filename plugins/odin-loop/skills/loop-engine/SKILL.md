@@ -25,6 +25,10 @@ This skill handles five actions, dispatched on the first argument of `/odin`:
 | `/odin list`           | List available loop definitions                   |
 | `/odin new`            | Author a new custom loop by interview             |
 
+> `/odin refine [loop]` (and `/odin refine apply`) is **not** handled here — it is
+> the memory raven's job, handled by the **`muninn`** skill. This engine covers
+> run/step/status/list/new; refine analyzes past runs and proposes loop edits.
+
 If no run is active and the user types `/odin run`, ask which loop to start
 (default to `spec-harness-tdd`).
 
