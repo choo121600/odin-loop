@@ -26,7 +26,8 @@ deep interview → harness design → harness verify → implement → test
 ## 기본 루프가 이렇게 설계된 이유
 
 - **deep interview 먼저** — AI 코딩 실패의 대부분은 코딩 실패가 아니라 *의도* 실패입니다.
-  인터뷰는 코드를 쓰기 전에 모호한 요청을 *테스트 가능한 acceptance criteria*로 바꿉니다.
+  인터뷰는 고정된 차원 집합을 훑어, 코드를 쓰기 전에 모호한 요청을 *테스트 가능한
+  acceptance criteria*로 — 구조화된 `spec.md`에 담아 — 바꿉니다.
 - **구현보다 하니스 먼저** — criteria가 실행 가능한 테스트가 되므로, "완료"에 객관적
   정의가 생깁니다.
 - **하니스 자체를 검증 (궁니르)** — 대부분의 도구가 건너뛰는 단계입니다. 항상 통과하는

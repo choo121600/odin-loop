@@ -36,7 +36,9 @@ interview → harness-design → harness-verify → implement → test
  (Huginn)                      (Gungnir)            ↑__________|
 ```
 
-1. **interview** — 모호한 요청을 테스트 가능한 acceptance criteria로 (`ai+human`).
+1. **interview** — 모호한 요청을 구조화된 `spec.md`로: 근본 목표를 확인하고 여덟 가지
+   차원(동작·실패 모드·데이터·의존성·제약 등)을 훑어 모든 요구사항을 테스트 가능한
+   acceptance criteria로 환원. 게이트는 표현뿐 아니라 커버리지까지 검사 (`ai+human`).
 2. **harness-design** — 각 기준을 실행 가능한 테스트로 번역 (`ai`).
 3. **harness-verify** — 하니스에 이빨이 있음을 증명: 고의로 틀린 스텁이 최소 1개
    테스트를 실패시켜야 함 (`ai+human`).

@@ -26,8 +26,9 @@ The names come from the myth, and they map onto the architecture:
 ## Why the default loop is shaped this way
 
 - **Deep interview first** — most AI coding failures are intent failures, not
-  coding failures. The interview turns a vague request into *testable acceptance
-  criteria* before any code is written.
+  coding failures. The interview probes a fixed set of dimensions and turns a
+  vague request into *testable acceptance criteria* — captured in a structured
+  `spec.md` — before any code is written.
 - **Harness before implementation** — the criteria become executable tests, so
   "done" has an objective definition.
 - **Verify the harness itself (Gungnir)** — the step most tools skip. A test that
