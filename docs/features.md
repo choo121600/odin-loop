@@ -37,7 +37,10 @@ interview → harness-design → harness-verify → implement → test
  (Huginn)                      (Gungnir)            ↑__________|
 ```
 
-1. **interview** — turn a vague request into testable acceptance criteria (`ai+human`).
+1. **interview** — turn a vague request into a structured `spec.md`: confirm the
+   underlying goal, probe eight dimensions (behavior, failure modes, data,
+   dependencies, constraints, …), and reduce every requirement to a testable
+   acceptance criterion. The gate checks coverage, not just phrasing (`ai+human`).
 2. **harness-design** — translate each criterion into an executable test (`ai`).
 3. **harness-verify** — prove the harness has teeth: a deliberately-wrong stub must
    make at least one test fail (`ai+human`).
