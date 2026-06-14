@@ -114,8 +114,9 @@ Built-in loops live in `plugins/odin-loop/loops/`; your custom loops live in
 
 ## Status
 
-`v0.1.1` — engine + default loop + custom-loop authoring + Muninn (`/odin refine`)
-session-mining refinement.
+`v0.2.0` — deeper interview stage (8-dimension coverage gate + structured
+`spec.md`). Plus v0.1.1: engine + default loop + custom-loop authoring + Muninn
+(`/odin refine`) session-mining refinement.
 
 ## License
 
