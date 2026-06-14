@@ -43,6 +43,20 @@ The names come from the myth, and they map onto the architecture:
 /plugin install odin-loop@odin-loop
 ```
 
+## Quickstart
+
+On your first `/odin run`, Odin-Loop asks which loop to use (default
+`spec-harness-tdd`) and begins a deep interview — turning your request into
+testable acceptance criteria before any code is written.
+
+```
+/odin run        # no active run → pick a loop, then interview
+/odin status     # see where the run is
+```
+
+It pauses at every `ai+human` gate; approve by running `/odin run` again, or type
+feedback to revise that stage.
+
 ## Usage
 
 ```
@@ -70,6 +84,12 @@ signals only (never message content), and **nothing is applied without your
 approval** — run `/odin refine apply` to accept. The loop learns from how you
 actually work.
 
+## Documentation
+
+- [Design](docs/design.md) — architecture, the loop-as-data model, gates & state
+- [Features](docs/features.md) — every command, the default loop, Muninn
+- [Scenarios](docs/scenarios.md) — end-to-end walkthroughs
+
 ## Loops are data
 
 A loop is a YAML file (see [`plugins/odin-loop/loops/spec-harness-tdd.yaml`](plugins/odin-loop/loops/spec-harness-tdd.yaml)
@@ -88,12 +108,12 @@ stages:
       on_fail: <stage id to loop back to>   # optional
 ```
 
-Built-in loops live in `loops/`; your custom loops live in
+Built-in loops live in `plugins/odin-loop/loops/`; your custom loops live in
 `.odin-loop/loops/` in your project. Run state lives in `.odin-loop/runs/`.
 
 ## Status
 
-`v0.2.0` — engine + default loop + custom-loop authoring + Muninn (`/odin refine`)
+`v0.1.1` — engine + default loop + custom-loop authoring + Muninn (`/odin refine`)
 session-mining refinement.
 
 ## License
