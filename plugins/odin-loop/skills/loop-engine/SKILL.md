@@ -38,11 +38,22 @@ If no run is active and the user types `/odin run`, ask which loop to start
 | User custom loops         | `<project>/.odin-loop/loops/*.yaml`                    |
 | Active run state          | `<project>/.odin-loop/runs/<run-id>/state.json`        |
 | Loop docs (spec, reports) | `<project>/.odin-loop/runs/<run-id>/`                  |
-| Code & test artifacts     | the real project tree (e.g. `harness/`, `src/`)        |
+| Run harness & stubs       | `<project>/.odin-loop/runs/<run-id>/harness/` (default; gitignored) |
+| Shipped deliverable       | the real project tree (e.g. `src/`, or tests meant to be committed) |
 
 `<plugin>` is this plugin's root. Resolve loop names by checking the project
 `.odin-loop/loops/` first, then the built-in `loops/`. Create `.odin-loop/`
 directories as needed. Use the `date` command for any timestamps.
+
+**Harness location.** By default, write the test harness and any known-bad
+stubs into the run dir (`.odin-loop/runs/<run-id>/harness/`), NOT the repo root
+— `.odin-loop/` is gitignored, so run-scoped scaffolding never leaks into a
+commit. Make the harness location-independent (e.g. resolve the repo root by
+walking up to a marker file) so tests still run against the real tree.
+Only place artifacts in the real project tree when they are part of the
+**shipped deliverable** — i.e. `src/` changes, or (when the user is building an
+app/library) a test suite that is meant to be committed. In that case, say so
+and "promote" the harness out of the run dir explicitly.
 
 ---
 
