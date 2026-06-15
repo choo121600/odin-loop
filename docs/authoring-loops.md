@@ -56,10 +56,13 @@ plain language:
   `harness/` pass." Write it so it's observable, not a matter of opinion.
 - **on_fail** — the stage `id` to jump back to when the gate fails. Omit it to
   simply retry the same stage.
-- **agent** — *where* a stage runs. Omit it (or `inline`) and the engine runs the
-  stage itself. Set `agent: fresh` to run it in a clean-room sub-agent with no
-  prior conversation context — for an independent review or audit that must not be
-  biased by the work it inspects (it sees only the stage's `consumes` artifacts).
+- **agent** — *who* runs a stage and *where*. Omit it (or `inline`) and the engine
+  runs the stage itself; `fresh` runs it in a clean-room sub-agent with no prior
+  conversation context (it sees only the stage's `consumes` artifacts). `agent` can
+  also name one of five reusable **roles** — `explore`, `planner`, `executor`,
+  `critic`, `reviewer` — each a persona that governs *how* the worker behaves. A
+  role can be a bare string (`agent: reviewer`, using the role's default context) or
+  an object that overrides it (`agent: { role: executor, fresh: true }`). See §4½.
 - **interview** — *optional*, for a requirement-gathering stage. Set
   `interview.mode: deep` to run the **deep-interview playbook**: confirm the work's
   components (topology), self-score clarity each round until ambiguity ≤ a
@@ -99,7 +102,9 @@ stages:
       Do the thing. Be specific about what "done" looks like.
     consumes: [some-input.md]   # artifacts this stage reads   (hints, optional)
     produces: [some-output.md]  # artifacts this stage writes  (hints, optional)
-    agent: inline               # inline (default) | fresh (clean-room sub-agent)
+    agent: inline               # inline (default) | fresh | a role
+                                #   role: explore | planner | executor | critic | reviewer
+                                #   or { role: executor, fresh: true } to override context
     interview:                  # optional — opt this stage into the deep-interview
       mode: deep                #   playbook (topology + convergence + challenges +
       threshold: 0.15           #   auto-assist). A deep interview also produces
@@ -149,6 +154,38 @@ stuck loop stops and reports instead of spinning — `12` is a sensible default.
 
 ---
 
+## 4½. Execution roles (who runs a stage)
+
+By default a stage runs `inline` (in the engine thread) or `fresh` (a generic
+clean-room sub-agent). You can also assign a stage one of five **named roles** —
+reusable personas shipped at `plugins/odin-loop/agents/<role>.md`. A role governs
+*how* the worker behaves; the stage's `goal`/`gate`/`prompt`/`produces` in the
+YAML stay authoritative — the loop is data; the role is just how it's executed.
+
+| Role       | For                                              | Edits?              | Default context |
+| ---------- | ------------------------------------------------ | ------------------- | --------------- |
+| `explore`  | read-only investigation, interview auto-assist   | no                  | fresh           |
+| `planner`  | turn a spec into an ordered build plan (the HOW) | its artifact only   | inline          |
+| `executor` | design the harness / implement / run tests       | yes                 | inline          |
+| `critic`   | adversarial verification (Gungnir)               | stub + report only  | fresh           |
+| `reviewer` | clean review against the spec, labels findings   | report only         | fresh           |
+
+**Default context** is whether the role runs `fresh` (a clean-room sub-agent with
+no prior conversation) or `inline` (in the engine thread). Write a role as a bare
+string to take its default, or as an object to override it:
+
+```yaml
+agent: reviewer                      # bare string — uses the role's default (fresh)
+agent: { role: executor, fresh: true }   # object — run executor in a fresh sub-agent
+```
+
+`inline` and `fresh` still work on their own, unchanged. The built-in
+`spec-harness-tdd` loop now uses roles throughout: `plan` → `planner`,
+`harness-design` → `executor`, `harness-verify` → `critic`, `implement` /
+`test` → `executor`, and `review` → `reviewer`.
+
+---
+
 ## 5. Two ways to author your loop
 
 ### (a) By hand
@@ -176,8 +213,10 @@ The engine asks you, a couple of questions at a time:
 3. For each stage, what's the gate check — and is it `ai` or `ai+human`?
 4. When a stage fails its gate, where should it loop back to (`on_fail`)?
 5. What's the global `max_iterations` cap?
-6. Does any stage need an independent review — one that shouldn't be biased by the
-   work it inspects? If so, it's marked `agent: fresh` (a clean-room sub-agent).
+6. Does any stage need a dedicated persona or an independent review — one that
+   shouldn't be biased by the work it inspects? If so, it's assigned a **role**
+   (e.g. `reviewer` or `critic`, which run in a clean-room sub-agent) or plain
+   `agent: fresh` (see §4½).
 7. Does the loop open with a requirement-gathering interview? If so, it offers the
    **deep interview** (`interview.mode: deep`) and captures its `threshold`,
    `challenges`, and `auto_assist` (see §6½).
@@ -332,10 +371,12 @@ Before running, check your YAML against the rules the engine validates:
 - Every **stage `id` is unique**.
 - Every **`on_fail` points to a real stage `id`** in the same loop.
 - Every **gate has both a `mode` and a `check`**.
-- Any **`agent` value is either `inline` or `fresh`**; an `agent: fresh` stage
-  **declares a non-empty `consumes`** (its only input channel), and a stage that
-  talks to the user is never `fresh`.
-- Any **`interview.mode: deep`** stage is not `agent: fresh`, lists
+- Any **`agent` value is `inline`, `fresh`, or a role** (`explore` | `planner` |
+  `executor` | `critic` | `reviewer`), optionally as a `{ role, fresh }` mapping.
+  Any stage that **resolves to a fresh context** (bare `fresh`, a fresh-by-default
+  role, or `fresh: true`) **declares a non-empty `consumes`** (its only input
+  channel), and a stage that talks to the user never resolves to fresh.
+- Any **`interview.mode: deep`** stage does not resolve to a fresh context, lists
   `interview-log.md` in `produces`, has a `threshold` in (0, 1), and every
   `challenges` entry is `contrarian|simplifier|ontologist@<round>`.
 

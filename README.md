@@ -11,7 +11,7 @@ own with `/odin new`.
 
 ```
 deep interview → plan → harness design → harness verify → implement → test → clean review
-   (Huginn)                                (Gungnir)                          (fresh agent)
+   (Huginn)     (planner) (executor)    (critic·Gungnir) (executor) (executor)  (reviewer)
 ```
 
 The names come from the myth, and they map onto the architecture:
@@ -39,8 +39,9 @@ The names come from the myth, and they map onto the architecture:
   least one test to *fail* — proving the harness has teeth.
 - **Then implement and test** — implement against the verified harness; loop back
   on failure, bounded by a `max_iterations` cap.
-- **Review with a clean agent** — a final `agent: fresh` stage reviews the result
-  with no memory of how it was built, catching what the harness can't encode
+- **Review with a clean agent** — a final `reviewer`-role stage (clean-room, no
+  prior context) reviews the result with no memory of how it was built, catching
+  what the harness can't encode
   (missed edge cases, scope creep); an objectively-defined *blocking* finding loops
   back to `implement` (the fix adds a regression test), and the stage pauses for
   your sign-off.
@@ -120,17 +121,33 @@ stages:
 Built-in loops live in `plugins/odin-loop/loops/`; your custom loops live in
 `.odin-loop/loops/` in your project. Run state lives in `.odin-loop/runs/`.
 
+### Stage roles
+
+Each stage can name **who** runs it via `agent`: `inline` (the engine itself),
+`fresh` (a generic clean-room sub-agent), or one of five reusable roles shipped in
+[`plugins/odin-loop/agents/`](plugins/odin-loop/agents/):
+
+| `explore` | `planner` | `executor` | `critic` | `reviewer` |
+| --- | --- | --- | --- | --- |
+| read-only scout | spec → plan | implement & test | adversarial verify (Gungnir) | clean review |
+
+`explore` / `critic` / `reviewer` run **fresh** (clean-room) by default; `planner` /
+`executor` run **inline**. Override per stage with `agent: { role: reviewer, fresh: false }`.
+The role shapes *how* a worker behaves; the stage's gate and artifacts stay in the YAML.
+
 ## Status
 
-`v0.4.0` — the **deep-interview playbook**: the interview now confirms a
-multi-component **topology**, **self-scores clarity each round** to an ambiguity
-threshold (convergence tracked in `interview-log.md`), injects
-contrarian/simplifier/ontologist **challenges**, and can **auto-assist** — opt in
-per stage with `interview.mode: deep`. Plus a deterministic loop validator
-(`scripts/validate_loop.py`) wired into `/odin run` and `/odin new`. Prior: v0.3.0
-clean-room **review** stage + `agent: inline | fresh`; v0.2.0 deeper interview
-(8-dimension gate + structured `spec.md`); v0.1.1 engine + default loop +
-custom-loop authoring + Muninn (`/odin refine`) session-mining refinement.
+`v0.6.0` — **named stage roles**: a stage's `agent` can now be one of five reusable
+personas — `explore` / `planner` / `executor` / `critic` / `reviewer` (shipped in
+`plugins/odin-loop/agents/`) — each with a default clean-room/inline context you can
+override via `agent: { role, fresh }`; the default loop runs its stages as these
+roles. Prior: v0.5.0 implementation-**plan** stage; v0.4.0 **deep-interview
+playbook** (multi-component topology, per-round clarity self-scoring to an ambiguity
+threshold, contrarian/simplifier/ontologist challenges, auto-assist) + deterministic
+loop validator (`scripts/validate_loop.py`); v0.3.0 clean-room **review** stage +
+`agent: inline | fresh`; v0.2.0 deeper interview (8-dimension gate + structured
+`spec.md`); v0.1.1 engine + default loop + custom-loop authoring + Muninn
+(`/odin refine`) session-mining refinement.
 
 ## License
 

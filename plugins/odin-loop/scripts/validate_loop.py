@@ -29,6 +29,12 @@ except Exception:
 
 GATE_MODES = ("ai", "ai+human", "human")
 AGENT_VALUES = ("inline", "fresh")
+ROLE_VALUES = ("explore", "planner", "executor", "critic", "reviewer")
+# A role's default execution context. Override per-stage with `{role, fresh}`.
+ROLE_DEFAULT_FRESH = {
+    "explore": True, "planner": False, "executor": False,
+    "critic": True, "reviewer": True,
+}
 CHALLENGE_RE = re.compile(r"^(contrarian|simplifier|ontologist)@\d+$")
 
 
@@ -102,14 +108,42 @@ def validate_loop(path, doc):
             if of is not None and of not in idset:
                 err(f"{where}: gate.on_fail `{of}` is not a real stage id")
 
-        # agent
+        # agent — a string (`inline` | `fresh` | a role) or a `{role, fresh}` map.
+        # We resolve it to one fact the rest of the rules care about: does this
+        # stage run in a FRESH context (its own clean-room sub-agent)?
         agent = st.get("agent")
-        if agent is not None and agent not in AGENT_VALUES:
-            err(f"{where}: agent must be `inline` or `fresh` (got {agent!r})")
-        if agent == "fresh":
+        effective_fresh = False
+        if agent is None:
+            pass
+        elif isinstance(agent, str):
+            if agent in AGENT_VALUES:
+                effective_fresh = (agent == "fresh")
+            elif agent in ROLE_VALUES:
+                effective_fresh = ROLE_DEFAULT_FRESH[agent]
+            else:
+                err(f"{where}: agent must be `inline`, `fresh`, or a role "
+                    f"{ROLE_VALUES} (got {agent!r})")
+        elif isinstance(agent, dict):
+            role = agent.get("role")
+            if role not in ROLE_VALUES:
+                err(f"{where}: agent.role must be one of {ROLE_VALUES} (got {role!r})")
+            fr = agent.get("fresh")
+            if fr is None:
+                effective_fresh = ROLE_DEFAULT_FRESH.get(role, False)
+            elif isinstance(fr, bool):
+                effective_fresh = fr
+            else:
+                err(f"{where}: agent.fresh must be true/false (got {fr!r})")
+            extra = set(agent) - {"role", "fresh"}
+            if extra:
+                warn(f"{where}: unknown agent key(s): {', '.join(sorted(extra))}")
+        else:
+            err(f"{where}: agent must be a string or a {{role, fresh}} mapping")
+
+        if effective_fresh:
             consumes = st.get("consumes")
             if not (isinstance(consumes, list) and consumes):
-                err(f"{where}: `agent: fresh` requires a non-empty `consumes` "
+                err(f"{where}: a fresh stage requires a non-empty `consumes` "
                     "(its only input channel)")
 
         # interview block (deep-interview playbook opt-in)
@@ -122,9 +156,9 @@ def validate_loop(path, doc):
                 if mode != "deep":
                     warn(f"{where}: interview.mode `{mode!r}` is unknown "
                          "(only `deep` is supported today)")
-                if agent == "fresh":
+                if effective_fresh:
                     err(f"{where}: a deep interview talks to the user — it cannot "
-                        "be `agent: fresh`")
+                        "run in a fresh context")
                 produces = st.get("produces") or []
                 if "interview-log.md" not in produces:
                     err(f"{where}: a deep interview must list `interview-log.md` "
