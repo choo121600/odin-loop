@@ -16,11 +16,11 @@ You want to build something but the requirements are still fuzzy.
   → ⏸ ai+human gate: review the spec, then /odin run to approve
 /odin run
   → harness-design: each criterion becomes a test (red, no implementation yet)
-  → harness-verify (Gungnir): a known-bad stub must fail ≥1 test → ⏸ approve
-/odin run
+  → harness-verify (Gungnir): a known-bad stub must fail ≥1 test (ai, auto)
   → implement: build against the harness · test: run it
   → a test fails → loops back to implement (bounded by max_iterations)
-  → all green → status: done
+  → review (fresh agent, no prior context): checks src/ against spec.md
+  → a blocking issue (spec/edge-case/security) → back to implement (fix adds a regression test); none → ⏸ ai+human sign-off → done
 ```
 
 The interview is the point: most failures are intent failures, so the loop
@@ -36,6 +36,7 @@ The default loop doesn't fit your work (say, a docs or research process).
   → for each stage: the gate check, and ai or ai+human?
   → where does each stage loop back on failure (on_fail)?
   → max_iterations cap?
+  → any stage that needs an independent review? → mark it agent: fresh
   → writes .odin-loop/loops/<name>.yaml (validated) and offers /odin run <name>
 ```
 

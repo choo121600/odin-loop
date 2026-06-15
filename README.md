@@ -10,8 +10,8 @@ executes. It ships with a strong default loop, and lets you build and refine you
 own with `/odin new`.
 
 ```
-deep interview → harness design → harness verify → implement → test
-   (Huginn)                          (Gungnir)
+deep interview → harness design → harness verify → implement → test → clean review
+   (Huginn)                          (Gungnir)                          (fresh agent)
 ```
 
 The names come from the myth, and they map onto the architecture:
@@ -36,6 +36,11 @@ The names come from the myth, and they map onto the architecture:
   least one test to *fail* — proving the harness has teeth.
 - **Then implement and test** — implement against the verified harness; loop back
   on failure, bounded by a `max_iterations` cap.
+- **Review with a clean agent** — a final `agent: fresh` stage reviews the result
+  with no memory of how it was built, catching what the harness can't encode
+  (missed edge cases, scope creep); an objectively-defined *blocking* finding loops
+  back to `implement` (the fix adds a regression test), and the stage pauses for
+  your sign-off.
 
 ## Install
 
@@ -114,9 +119,11 @@ Built-in loops live in `plugins/odin-loop/loops/`; your custom loops live in
 
 ## Status
 
-`v0.2.0` — deeper interview stage (8-dimension coverage gate + structured
-`spec.md`). Plus v0.1.1: engine + default loop + custom-loop authoring + Muninn
-(`/odin refine`) session-mining refinement.
+`v0.3.0` — added a clean-room **review** stage (a fresh, best-effort sub-agent
+reviews the result against the spec) and a first-class `agent: inline | fresh`
+stage field. Plus v0.2.0: deeper interview stage (8-dimension coverage gate +
+structured `spec.md`); v0.1.1: engine + default loop + custom-loop authoring +
+Muninn (`/odin refine`) session-mining refinement.
 
 ## License
 

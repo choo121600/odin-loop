@@ -15,11 +15,11 @@
   → ⏸ ai+human 게이트: 스펙 검토 후 /odin run 으로 승인
 /odin run
   → harness-design: 각 기준이 테스트가 됨 (아직 구현 없으니 red)
-  → harness-verify (궁니르): 고의로 틀린 스텁이 ≥1 테스트를 실패시켜야 함 → ⏸ 승인
-/odin run
+  → harness-verify (궁니르): 고의로 틀린 스텁이 ≥1 테스트를 실패시켜야 함 (ai, 자동)
   → implement: 하니스를 타겟으로 구현 · test: 실행
   → 테스트 실패 → implement로 루프백 (max_iterations로 제한)
-  → 전부 green → status: done
+  → review (새 에이전트, 이전 맥락 없음): src/를 spec.md와 대조 검토
+  → blocking 지적(스펙/엣지 케이스/보안) → implement로 (수정 시 회귀 테스트 추가); 없으면 → ⏸ ai+human 승인 → done
 ```
 
 인터뷰가 핵심입니다 — 대부분의 실패는 의도 실패이므로, "완료"에 테스트 가능한 정의가
@@ -35,6 +35,7 @@
   → 각 스테이지: 게이트 check, 그리고 ai 인가 ai+human 인가?
   → 각 스테이지는 실패 시 어디로 루프백하나 (on_fail)?
   → max_iterations 상한은?
+  → 독립적 리뷰가 필요한 스테이지가 있나? → agent: fresh로 표시
   → .odin-loop/loops/<name>.yaml 작성(검증됨) 후 /odin run <name> 제안
 ```
 

@@ -8,7 +8,7 @@
 #   name            : unique loop id (matches filename)
 #   version         : integer, bump on breaking edits
 #   description     : one-line summary
-#   max_iterations  : global safety cap on total stage runs (loopback guard)
+#   max_iterations  : global cap on gate failures / loopbacks (happy-path runs are not counted)
 #   stages[]        :
 #     id            : unique stage id
 #     title         : human label
@@ -16,6 +16,13 @@
 #     prompt        : instructions the engine follows to execute the stage
 #     consumes      : artifacts this stage reads   (hints)
 #     produces      : artifacts this stage writes  (hints)
+#     agent         : execution context for this stage (optional)
+#                     inline (default) -> the engine runs the stage itself
+#                     fresh            -> spawn a NEW sub-agent with NO prior
+#                                         conversation context; pass it only the
+#                                         `consumes` artifacts + the task. Use for
+#                                         an independent review/audit that must
+#                                         not be biased by the work it reviews.
 #     gate          : the advance condition
 #       mode        : ai        -> engine judges, auto-advances on pass
 #                     ai+human  -> engine judges, then PAUSES for human approval
@@ -26,9 +33,9 @@
 # =============================================================================
 
 name: spec-harness-tdd
-version: 2
-description: Clarify requirements -> design harness -> verify harness -> implement -> test
-max_iterations: 12
+version: 3
+description: Clarify requirements -> design harness -> verify harness -> implement -> test -> clean review
+max_iterations: 15
 
 stages:
   # ---------------------------------------------------------------------------
@@ -81,7 +88,8 @@ stages:
         Every requirement in spec.md is expressed as a testable acceptance
         criterion with no ambiguous or open-to-interpretation items; all 8
         question dimensions are each covered (or explicitly excluded under Out
-        of Scope); and no unresolved risk remains under Open Questions.
+        of Scope); and every item under Open Questions is either resolved or
+        explicitly accepted as a non-blocking risk (no unresolved blocking risk).
 
   # ---------------------------------------------------------------------------
   - id: harness-design
@@ -114,7 +122,7 @@ stages:
     consumes: [harness/]
     produces: [harness-report.md]
     gate:
-      mode: ai+human
+      mode: ai
       check: >
         harness-report.md records that at least one test fails against the
         known-bad stub.
@@ -128,6 +136,8 @@ stages:
       Implement so that spec.md is satisfied and harness/ tests pass.
       - Do not weaken or delete tests to make the harness pass.
       - Do not add features that aren't in the spec (prevent scope creep).
+      - If you arrived here from a review finding, first add a regression test to
+        harness/ that captures it, then make it pass.
     consumes: [spec.md, harness/]
     produces: [src/]
     gate:
@@ -146,4 +156,50 @@ stages:
     gate:
       mode: ai
       check: All tests in harness/ pass.
+      on_fail: implement
+
+  # ---------------------------------------------------------------------------
+  - id: review
+    title: Clean Review (fresh agent)
+    goal: Have an uncontaminated agent review the implementation against the spec
+    agent: fresh
+    prompt: |
+      Review the finished implementation with fresh eyes. This stage runs in a
+      FRESH sub-agent that has NOT seen the implementation conversation, so its
+      judgment is not anchored to the implementer's reasoning.
+
+      The reviewer receives only spec.md, the implementation (src/), harness/,
+      and harness-report.md (what the harness already discriminates). Nothing
+      from the prior thread.
+
+      Look for what the harness does NOT catch:
+      - correctness on paths the tests miss, and edge cases listed in spec.md
+      - security / unsafe assumptions / resource handling
+      - scope creep: a *user-facing* behavior not traceable to an acceptance
+        criterion (internal helpers, validation, error handling, logging are
+        NOT scope creep)
+      - spec gaps the harness silently ignores
+
+      Classify every finding by this fixed rule:
+        BLOCKING     = it (a) violates an Acceptance Criterion in spec.md, or
+                       (b) breaks on an Edge Case listed in spec.md, or
+                       (c) is a security or data-loss defect.
+        NON-BLOCKING = everything else (style, preference, "could be better").
+      Respect spec.md's "Out of Scope" and "Assumptions" — those are deliberate
+      user decisions; never raise them as blocking, record them as non-blocking
+      scope notes at most.
+
+      Record every finding in review-report.md with file:line, its blocking /
+      non-blocking label, and a one-line rationale; state explicitly whether any
+      blocking findings remain. You assign the labels. Do NOT edit code here — a
+      blocking finding loops back to implement, where the fix should add a
+      regression test that captures it.
+    consumes: [spec.md, src/, harness/, harness-report.md]
+    produces: [review-report.md]
+    gate:
+      mode: ai+human
+      check: >
+        review-report.md exists and records zero BLOCKING findings — where
+        blocking means a violation of a spec.md acceptance criterion or listed
+        edge case, or a security/data-loss defect.
       on_fail: implement

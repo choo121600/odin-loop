@@ -10,8 +10,8 @@
 수 있습니다.
 
 ```
-deep interview → harness design → harness verify → implement → test
-   (Huginn)                          (Gungnir)
+deep interview → harness design → harness verify → implement → test → clean review
+   (Huginn)                          (Gungnir)                          (fresh agent)
 ```
 
 이름은 신화에서 따왔고, 그대로 아키텍처에 매핑됩니다:
@@ -35,6 +35,10 @@ deep interview → harness design → harness verify → implement → test
   하도록 요구함으로써, 하니스에 "이빨"이 있음을 증명합니다.
 - **그다음 구현하고 테스트** — 검증된 하니스를 타겟으로 구현하고, 실패 시 루프백하되
   `max_iterations` 상한으로 제한합니다.
+- **깨끗한 에이전트로 리뷰** — 마지막 `agent: fresh` 스테이지가 어떻게 만들어졌는지에
+  대한 기억 없이 결과를 리뷰해, 하니스로 인코딩할 수 없는 것(놓친 엣지 케이스, 스코프
+  크리프)을 잡아냅니다. 객관적으로 정의된 *blocking* 지적은 `implement`로 루프백하고
+  (수정 시 회귀 테스트를 추가), 스테이지는 당신의 승인을 위해 멈춥니다.
 
 ## 설치
 
@@ -113,8 +117,10 @@ stages:
 
 ## 상태
 
-`v0.2.0` — 인터뷰 스테이지 심화(8개 차원 커버리지 게이트 + 구조화된 `spec.md`).
-그 외 v0.1.1: 엔진 + 기본 루프 + 커스텀 루프 작성 + 무닌(`/odin refine`) 세션 마이닝 교정.
+`v0.3.0` — 클린룸 **review** 스테이지 추가(새 best-effort 서브에이전트가 결과를
+스펙과 대조 리뷰) + 1급 `agent: inline | fresh` 스테이지 필드. 그 외 v0.2.0:
+인터뷰 스테이지 심화(8개 차원 커버리지 게이트 + 구조화된 `spec.md`); v0.1.1:
+엔진 + 기본 루프 + 커스텀 루프 작성 + 무닌(`/odin refine`) 세션 마이닝 교정.
 
 ## 라이선스
 
