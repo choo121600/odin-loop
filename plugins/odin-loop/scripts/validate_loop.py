@@ -159,8 +159,12 @@ def validate_loop(path, doc):
                 if effective_fresh:
                     err(f"{where}: a deep interview talks to the user — it cannot "
                         "run in a fresh context")
-                produces = st.get("produces") or []
-                if "interview-log.md" not in produces:
+                produces = st.get("produces")
+                if not isinstance(produces, list):
+                    err(f"{where}: a deep interview's `produces` must be a list "
+                        "(otherwise the interview-log.md rule degrades to a "
+                        "substring test and a scalar silently passes)")
+                elif "interview-log.md" not in produces:
                     err(f"{where}: a deep interview must list `interview-log.md` "
                         "in `produces` (the convergence ledger the gate reads)")
                 thr = iv.get("threshold")
