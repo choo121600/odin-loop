@@ -21,6 +21,12 @@ TEST_MARKERS = ("pytest", "jest", "vitest", "npm test", "npm run test",
                 "go test", "cargo test", "unittest", "rspec", "phpunit",
                 "ctest", "gradle test", "mvn test", "tox")
 IMPL_TOOLS = ("Write", "Edit", "NotebookEdit")
+# An ai+human gate writes TWO history pass-entries: an `ai-pending` pause entry
+# then an `approved` entry (see loop-engine/SKILL.md gate vocabulary). The pause
+# halves below must NOT count as AI gates — the matching `approved` entry counts
+# the gate once, as human. Legacy variants are included so pre-existing run
+# history counts correctly too.
+PENDING_GATES = ("ai-pending", "ai-ok-awaiting-human", "awaiting_approval")
 
 
 def encode_cwd(cwd):
@@ -70,9 +76,10 @@ def analyze_runs(runs_dir):
         for h in (st.get("history") or []):
             if h.get("result") == "fail":
                 out["gate_failures_by_stage"][h.get("stage", "?")] += 1
-            if h.get("gate") == "approved":
+            gate = h.get("gate")
+            if gate == "approved":
                 out["human_gate_count"] += 1
-            elif h.get("result") == "pass":
+            elif h.get("result") == "pass" and gate not in PENDING_GATES:
                 out["ai_gate_count"] += 1
     return _finalize_runs(out, found=True)
 

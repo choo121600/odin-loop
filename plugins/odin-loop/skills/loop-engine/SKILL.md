@@ -90,6 +90,8 @@ and "promote" the harness out of the run dir explicitly.
 
 `iterations[stage]` counts how many times a gate failure looped back into that stage; `total_iterations` is their sum, checked against `max_iterations` on every loopback. Happy-path stage runs are not counted.
 
+Each history entry's `gate` field records **how** the stage passed, using a fixed vocabulary so tools can count gates reliably: `gate: "ai"` for an `ai` gate that auto-passed; `gate: "ai-pending"` for an `ai+human` (or `human`) stage that passed AI judgment and is now awaiting approval (written at step 2d); and `gate: "approved"` when the human approves (written at step 1). An `ai+human` gate therefore appends **two** pass entries — `ai-pending` then `approved` — but is **one** gate: a consumer counting gates must treat the `ai-pending` entry and its later `approved` entry as a single human-approved gate, never as one AI gate plus one human gate.
+
 The optional `interview` object is written only by a deep-interview stage (`interview.mode: deep`): it mirrors the convergence the engine is tracking in `interview-log.md` so `/odin status` can show it. See `deep-interview.md` for the full procedure.
 
 ---
@@ -149,7 +151,9 @@ This is the core algorithm. Drive automatically, but **stop at human gates**.
       - Jump to `gate.on_fail` if set, else retry the same stage. Continue.
 
    d. **On gate PASS:**
-      - Append `{stage, result: pass, ...}` to history.
+      - Append `{stage, result: pass, gate, ...}` to history — write `gate: "ai"`
+        for an `ai` gate, or `gate: "ai-pending"` for an `ai+human`/`human` stage
+        now awaiting approval (per the `gate` vocabulary above).
       - If `gate.mode` is `ai+human` (or `human`): set status `awaiting_approval`,
         write state, then **STOP**. Present a concise summary (what was produced,
         why the gate passed) and tell the user:
