@@ -99,6 +99,7 @@ actually work.
 - [Design](docs/design.md) — architecture, the loop-as-data model, gates & state
 - [Features](docs/features.md) — every command, the default loop, Muninn
 - [Scenarios](docs/scenarios.md) — end-to-end walkthroughs
+- [Authoring custom loops](docs/authoring-loops.md) — write your own loop as YAML
 
 ## Loops are data
 

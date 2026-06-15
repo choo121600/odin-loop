@@ -95,6 +95,7 @@ deep interview → plan → harness design → harness verify → implement → 
 - [설계](docs/design.ko.md) — 아키텍처, loop-as-data 모델, 게이트·상태
 - [기능](docs/features.ko.md) — 모든 명령, 기본 루프, 무닌
 - [시나리오](docs/scenarios.ko.md) — 엔드투엔드 워크스루
+- [커스텀 루프 작성](docs/authoring-loops.ko.md) — 직접 루프를 YAML로 작성
 
 ## 루프는 데이터다
 
