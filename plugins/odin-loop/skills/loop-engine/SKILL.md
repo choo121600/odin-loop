@@ -72,14 +72,17 @@ and "promote" the harness out of the run dir explicitly.
   "status": "running | awaiting_approval | done | failed",
   "current_stage": "interview",
   "iterations": { "implement": 2, "test": 2 },
-  "total_iterations": 5,
-  "max_iterations": 12,
+  "total_iterations": 4,
+  "max_iterations": 15,
   "artifacts": { "spec.md": ".odin-loop/runs/<id>/spec.md" },
   "history": [
-    { "stage": "interview", "result": "pass", "gate": "approved", "at": "..." }
+    { "stage": "interview", "result": "pass", "gate": "approved", "at": "..." },
+    { "stage": "review", "result": "pass", "gate": "approved", "at": "...", "agent": "fresh" }
   ]
 }
 ```
+
+`iterations[stage]` counts how many times a gate failure looped back into that stage; `total_iterations` is their sum, checked against `max_iterations` on every loopback. Happy-path stage runs are not counted.
 
 ---
 
@@ -98,9 +101,21 @@ This is the core algorithm. Drive automatically, but **stop at human gates**.
 2. **Loop over stages** starting from `current_stage`:
 
    a. **Execute the stage.** Follow the stage's `goal` + `prompt`. Produce the
-      declared `produces` artifacts. Use sub-agents (Task/Agent) for heavy stages
-      when helpful. For `interview`, actually interview the user — ask, wait,
-      refine `spec.md` — do not invent answers.
+      declared `produces` artifacts.
+      - **Execution context (`agent`).** `agent: fresh` is a recommendation, not a
+        hard guarantee — this engine is itself an LLM, so the isolation is
+        best-effort, not mechanically enforced. When a stage sets it, run that
+        stage in a NEW sub-agent (Task/Agent) that has not seen this conversation:
+        pass it only the stage `goal`/`prompt`, the task, the `consumes` artifacts
+        (read fresh from disk), and the path(s) to write its `produces` to. The
+        sub-agent writes its `produces` and assigns any blocking/non-blocking
+        labels; prefer those labels at the gate rather than re-judging from the
+        contaminated main thread. Don't quietly skip the sub-agent and judge
+        inline — that defeats the point. If `agent` is absent or `inline`, run the
+        stage yourself. (You may still use sub-agents for any heavy stage when
+        helpful.)
+      - For `interview`, actually interview the user — ask, wait, refine
+        `spec.md` — do not invent answers (interview is always `inline`).
 
    b. **Evaluate the gate.** Judge `gate.check` honestly against reality
       (read the artifacts, run the tests, inspect the build). Decide pass/fail.
@@ -164,13 +179,15 @@ Ask (1–2 at a time):
    And is that gate **ai** (auto) or **ai+human** (needs your approval)?
 4. When a stage fails its gate, where should it **loop back** to (`on_fail`)?
 5. What is the global `max_iterations` safety cap?
+6. Does any stage need an *independent* review — a check that must not be biased
+   by the work it inspects? If so, set `agent: fresh` on it so the engine runs it
+   in a clean-room sub-agent. Default review/audit/QA stages to `agent: fresh`.
 
 Then write a valid loop YAML (same schema as `loops/spec-harness-tdd.yaml`,
 documented at its top) to `<project>/.odin-loop/loops/<name>.yaml`. Echo the
 file back, and offer to start it with `/odin run <name>`.
 
-Validate before writing: unique stage ids, every `on_fail` points to a real
-stage id, every gate has a `mode` and a `check`.
+Validate before writing: unique stage ids, every `on_fail` points to a real stage id, every gate has a `mode` and a `check`, any `agent` value is either `inline` or `fresh`, any `agent: fresh` stage declares a non-empty `consumes` (its only input channel), and no stage that must talk to the user (e.g. an interview) is `agent: fresh`.
 
 ---
 
@@ -183,4 +200,8 @@ stage id, every gate has a `mode` and a `check`.
   convenience.
 - **Hybrid means humans hold the wheel at `ai+human` gates.** Pause and wait.
 - **Never weaken a harness to pass a gate.** Fix the implementation, not the test.
+- **Fresh-agent stages are best-effort, not enforced.** `agent: fresh` asks for a
+  sub-agent with no prior context; since the engine is an LLM, that isolation is a
+  recommendation it should honor, not a guarantee. Don't quietly judge inline, and
+  prefer the sub-agent's own labels at the gate.
 - **Loopbacks are bounded** by `max_iterations`. Report, don't spin.

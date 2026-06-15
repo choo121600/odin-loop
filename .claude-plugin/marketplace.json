@@ -8,7 +8,7 @@
     {
       "name": "odin-loop",
       "source": "./plugins/odin-loop",
-      "description": "Author, run, and refine custom AI dev workflow loops. Ships a deep-interview → harness → verify → implement → test loop, and lets you build your own loops as editable data."
+      "description": "Author, run, and refine custom AI dev workflow loops. Ships a deep-interview → harness → verify → implement → test → review loop, and lets you build your own loops as editable data."
     }
   ]
 }

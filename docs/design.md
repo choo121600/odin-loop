@@ -31,21 +31,26 @@ edits the loop itself.
 ## Stages and gates
 
 Each stage has a `goal`, a `prompt` the engine follows, optional `consumes` /
-`produces` artifact hints, and a **gate** — the condition to advance:
+`produces` artifact hints, an optional `agent` execution context, and a **gate**
+— the condition to advance:
 
 ```yaml
-- id: harness-verify
+- id: review
   gate:
     mode: ai+human        # ai = engine judges & auto-advances · ai+human = pause for approval
     check: <a testable assertion>
-    on_fail: harness-design   # where to jump when the gate fails (omit = retry this stage)
+    on_fail: implement        # where to jump when the gate fails (omit = retry this stage)
 ```
 
 - `mode: ai` — the engine judges the `check` honestly and advances automatically.
 - `mode: ai+human` — the engine judges, then **pauses** for your approval.
 - `on_fail` — the stage id to loop back to on failure.
-- A global **`max_iterations`** caps total stage runs so a failing loop reports
-  instead of spinning forever.
+- `agent: fresh` — run the stage in a clean-room sub-agent with no prior
+  conversation context, for an independent review/audit the rest of the run can't
+  bias (it sees only the stage's `consumes` artifacts). Omit it, or `inline`, to
+  run the stage in the engine itself.
+- A global **`max_iterations`** caps gate failures (loopbacks) so a failing loop
+  reports instead of spinning forever; happy-path runs are not counted.
 
 Gates are meant to be judged honestly: a gate that rubber-stamps proves nothing.
 
@@ -60,9 +65,12 @@ Each run persists its state so it can be resumed across sessions. The key fields
   "status": "running | awaiting_approval | done | failed",
   "current_stage": "interview",
   "iterations": { "implement": 2, "test": 2 },
-  "total_iterations": 5,
-  "max_iterations": 12,
-  "history": [ { "stage": "interview", "result": "pass", "gate": "approved" } ]
+  "total_iterations": 4,
+  "max_iterations": 15,
+  "history": [
+    { "stage": "interview", "result": "pass", "gate": "approved", "at": "..." },
+    { "stage": "review", "result": "pass", "gate": "approved", "at": "...", "agent": "fresh" }
+  ]
 }
 ```
 

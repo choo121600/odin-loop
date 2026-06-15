@@ -32,8 +32,9 @@ Odin-Loop가 할 수 있는 일을 명령 단위로.
 기본 제공 루프는 스펙 주도·테스트 우선 규율을 인코딩합니다:
 
 ```
-interview → harness-design → harness-verify → implement → test
- (Huginn)                      (Gungnir)            ↑__________|
+interview → harness-design → harness-verify → implement → test → review
+ (Huginn)                      (Gungnir)           ↑__________|_______|
+                                                         (fresh agent)
 ```
 
 1. **interview** — 모호한 요청을 구조화된 `spec.md`로: 근본 목표를 확인하고 여덟 가지
@@ -41,9 +42,14 @@ interview → harness-design → harness-verify → implement → test
    acceptance criteria로 환원. 게이트는 표현뿐 아니라 커버리지까지 검사 (`ai+human`).
 2. **harness-design** — 각 기준을 실행 가능한 테스트로 번역 (`ai`).
 3. **harness-verify** — 하니스에 이빨이 있음을 증명: 고의로 틀린 스텁이 최소 1개
-   테스트를 실패시켜야 함 (`ai+human`).
+   테스트를 실패시켜야 함 (`ai`).
 4. **implement** — 테스트를 약화하지 않고 검증된 하니스를 타겟으로 구현 (`ai`).
 5. **test** — 하니스 실행, 실패 시 `implement`로 루프백 (`ai`).
+6. **review** — *새* 서브에이전트(이전 맥락 없음, `agent: fresh`)가 `spec.md`를 기준으로
+   구현을 리뷰해 하니스가 잡지 못하는 것(놓친 엣지 케이스, 스코프 크리프)을 찾습니다.
+   "blocking"은 객관적으로 정의됩니다(스펙 기준/엣지 케이스 위반, 또는 보안·데이터 손실
+   결함). blocking 지적은 `implement`로 루프백하고(수정 시 회귀 테스트를 추가), 스테이지는
+   당신의 승인을 위해 멈춥니다 (`ai+human`).
 
 ## 나만의 루프 작성
 

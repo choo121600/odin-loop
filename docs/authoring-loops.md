@@ -56,9 +56,14 @@ plain language:
   `harness/` pass." Write it so it's observable, not a matter of opinion.
 - **on_fail** — the stage `id` to jump back to when the gate fails. Omit it to
   simply retry the same stage.
-- **max_iterations** — a global safety cap on the total number of stage runs. It
-  stops a loop from spinning forever; when total runs exceed it, the engine
-  stops and reports instead of looping again.
+- **agent** — *where* a stage runs. Omit it (or `inline`) and the engine runs the
+  stage itself. Set `agent: fresh` to run it in a clean-room sub-agent with no
+  prior conversation context — for an independent review or audit that must not be
+  biased by the work it inspects (it sees only the stage's `consumes` artifacts).
+- **max_iterations** — a global safety cap on the number of gate failures
+  (loopbacks); happy-path stage runs are not counted. It stops a loop from
+  spinning forever; when loopbacks exceed it, the engine stops and reports
+  instead of looping again.
 
 ---
 
@@ -80,7 +85,7 @@ The schema, top to bottom:
 name: my-loop            # unique loop id (matches the filename)
 version: 1               # integer; bump on breaking edits
 description: one-liner   # shown in `/odin list`
-max_iterations: 12       # global safety cap on total stage runs
+max_iterations: 12       # cap on gate failures (loopbacks), not happy-path runs
 
 stages:
   - id: first-stage      # unique stage id
@@ -90,6 +95,7 @@ stages:
       Do the thing. Be specific about what "done" looks like.
     consumes: [some-input.md]   # artifacts this stage reads   (hints, optional)
     produces: [some-output.md]  # artifacts this stage writes  (hints, optional)
+    agent: inline               # inline (default) | fresh (clean-room sub-agent)
     gate:
       mode: ai           # ai | ai+human | human
       check: the observable condition that must be true to advance
@@ -159,6 +165,8 @@ The engine asks you, a couple of questions at a time:
 3. For each stage, what's the gate check — and is it `ai` or `ai+human`?
 4. When a stage fails its gate, where should it loop back to (`on_fail`)?
 5. What's the global `max_iterations` cap?
+6. Does any stage need an independent review — one that shouldn't be biased by the
+   work it inspects? If so, it's marked `agent: fresh` (a clean-room sub-agent).
 
 It then writes a valid loop YAML to `.odin-loop/loops/<name>.yaml`, echoes it
 back, and offers to start it with `/odin run <name>`.
@@ -219,6 +227,7 @@ stages:
       Treat every checkable assertion in doc.md as guilty until verified ...
     consumes: [doc.md]
     produces: [fact-check-report.md]
+    agent: fresh
     gate:
       mode: ai
       check: every checkable assertion verified, zero FAIL or unverifiable items remain
@@ -245,6 +254,9 @@ Why it's shaped this way:
   auto-advance, so it doesn't interrupt you.
 - **`fact-check` has `on_fail: draft`.** If a claim doesn't check out, the fix is
   in the prose, so the loop jumps back to `draft` — not all the way to `brief`.
+- **`fact-check` runs `agent: fresh`.** A clean-room sub-agent re-checks every
+  claim with no memory of how the draft was written, so it can't wave through its
+  own reasoning — it sees only `doc.md`.
 - **`revise` is `ai+human`.** The last stage is your final sign-off on the
   finished document.
 
@@ -257,6 +269,9 @@ Before running, check your YAML against the rules the engine validates:
 - Every **stage `id` is unique**.
 - Every **`on_fail` points to a real stage `id`** in the same loop.
 - Every **gate has both a `mode` and a `check`**.
+- Any **`agent` value is either `inline` or `fresh`**; an `agent: fresh` stage
+  **declares a non-empty `consumes`** (its only input channel), and a stage that
+  talks to the user is never `fresh`.
 
 Then confirm the engine can see it and start it:
 

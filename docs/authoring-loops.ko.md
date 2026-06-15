@@ -60,9 +60,13 @@ YAML을 읽어 **스테이지(stage)**를 순서대로 밟아 나가며, 각 스
   작성하세요.
 - **on_fail** — 게이트가 실패했을 때 되돌아갈 스테이지 `id`. 생략하면 같은
   스테이지를 단순히 다시 시도합니다.
-- **max_iterations** — 전체 스테이지 실행 횟수에 대한 전역 안전 상한. 루프가
-  무한히 도는 것을 막아 줍니다. 총 실행 횟수가 이 값을 넘으면, 엔진은 다시
-  반복하는 대신 멈추고 보고합니다.
+- **agent** — 스테이지가 *어디서* 실행되는지. 생략하거나 `inline`이면 엔진이 직접
+  실행합니다. `agent: fresh`로 설정하면 이전 대화 맥락이 없는 클린룸 서브에이전트에서
+  실행됩니다 — 검사 대상 작업에 편향되면 안 되는 독립적 리뷰·감사용입니다(그 스테이지의
+  `consumes` 산출물만 봅니다).
+- **max_iterations** — 게이트 실패(루프백) 횟수에 대한 전역 안전 상한이며,
+  해피패스 스테이지 실행은 세지 않습니다. 루프가 무한히 도는 것을 막아 줍니다.
+  루프백이 이 값을 넘으면, 엔진은 다시 반복하는 대신 멈추고 보고합니다.
 
 ---
 
@@ -84,7 +88,7 @@ YAML을 읽어 **스테이지(stage)**를 순서대로 밟아 나가며, 각 스
 name: my-loop            # 고유한 루프 id (파일명과 일치)
 version: 1               # 정수; 호환성 깨지는 변경 시 올림
 description: one-liner   # `/odin list`에 표시됨
-max_iterations: 12       # 전체 스테이지 실행 횟수의 전역 안전 상한
+max_iterations: 12       # 게이트 실패(루프백) 상한, 해피패스 실행은 미포함
 
 stages:
   - id: first-stage      # 고유한 스테이지 id
@@ -94,6 +98,7 @@ stages:
       Do the thing. Be specific about what "done" looks like.
     consumes: [some-input.md]   # 이 스테이지가 읽는 산출물   (힌트, 선택)
     produces: [some-output.md]  # 이 스테이지가 쓰는 산출물   (힌트, 선택)
+    agent: inline               # inline (기본) | fresh (클린룸 서브에이전트)
     gate:
       mode: ai           # ai | ai+human | human
       check: the observable condition that must be true to advance
@@ -164,6 +169,8 @@ stages:
 3. 각 스테이지의 게이트 check는 무엇이고 — `ai`인가요, `ai+human`인가요?
 4. 스테이지가 게이트에 실패하면 어디로 되돌아가야 하나요(`on_fail`)?
 5. 전역 `max_iterations` 상한은 얼마인가요?
+6. 검사 대상 작업에 편향되면 안 되는 독립적 리뷰가 필요한 스테이지가 있나요? 있다면
+   `agent: fresh`(클린룸 서브에이전트)로 표시됩니다.
 
 그런 다음 유효한 루프 YAML을 `.odin-loop/loops/<name>.yaml`에 작성하고, 그
 내용을 다시 보여 주며, `/odin run <name>`으로 시작하도록 안내합니다.
@@ -225,6 +232,7 @@ stages:
       Treat every checkable assertion in doc.md as guilty until verified ...
     consumes: [doc.md]
     produces: [fact-check-report.md]
+    agent: fresh
     gate:
       mode: ai
       check: every checkable assertion verified, zero FAIL or unverifiable items remain
@@ -251,6 +259,9 @@ stages:
   있으므로 여러분을 방해하지 않습니다.
 - **`fact-check`는 `on_fail: draft`입니다.** 주장이 사실로 확인되지 않으면 고칠
   곳은 산문이므로, 루프는 `brief`까지가 아니라 `draft`로 되돌아갑니다.
+- **`fact-check`는 `agent: fresh`로 실행됩니다.** 클린룸 서브에이전트가 초안이 어떻게
+  작성됐는지 전혀 모르는 상태에서 — `doc.md`만 보고 — 모든 주장을 다시 검증하므로,
+  자기 추론을 통과시켜 주지 못합니다.
 - **`revise`는 `ai+human`입니다.** 마지막 스테이지는 완성된 문서에 대한 여러분의
   최종 승인입니다.
 
@@ -263,6 +274,9 @@ stages:
 - 모든 **스테이지 `id`는 고유**해야 합니다.
 - 모든 **`on_fail`은 같은 루프 안의 실제 스테이지 `id`를 가리켜야** 합니다.
 - 모든 **게이트는 `mode`와 `check`를 모두** 가져야 합니다.
+- 모든 **`agent`는 `inline` 또는 `fresh`** 중 하나여야 하며, `agent: fresh` 스테이지는
+  **비어 있지 않은 `consumes`를 선언**해야 하고(유일한 입력 채널), 사용자와 대화하는
+  스테이지는 절대 `fresh`가 아닙니다.
 
 그런 다음 엔진이 루프를 인식하는지 확인하고 시작하세요:
 
