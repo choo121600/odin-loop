@@ -10,8 +10,8 @@
 수 있습니다.
 
 ```
-deep interview → harness design → harness verify → implement → test → clean review
-   (Huginn)                          (Gungnir)                          (fresh agent)
+deep interview → plan → harness design → harness verify → implement → test → clean review
+   (Huginn)                                (Gungnir)                          (fresh agent)
 ```
 
 이름은 신화에서 따왔고, 그대로 아키텍처에 매핑됩니다:

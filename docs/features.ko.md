@@ -32,9 +32,9 @@ Odin-Loop가 할 수 있는 일을 명령 단위로.
 기본 제공 루프는 스펙 주도·테스트 우선 규율을 인코딩합니다:
 
 ```
-interview → harness-design → harness-verify → implement → test → review
- (Huginn)                      (Gungnir)           ↑__________|_______|
-                                                         (fresh agent)
+interview → plan → harness-design → harness-verify → implement → test → review
+ (Huginn)                             (Gungnir)            ↑__________|______|
+                                                                (fresh agent)
 ```
 
 1. **interview** — 모호한 요청을 구조화된 `spec.md`로. **딥 인터뷰 플레이북**
@@ -46,12 +46,18 @@ interview → harness-design → harness-verify → implement → test → revie
    질문을 해소합니다(대신 결정하지는 않음). 게이트는 수렴 ledger를 읽습니다 — 모든
    컴포넌트가 테스트 가능한 기준으로 커버되고 ambiguity ≤ threshold (`ai+human`).
    [설계 → 딥 인터뷰](design.ko.md#딥-인터뷰-후긴) 참고.
-2. **harness-design** — 각 기준을 실행 가능한 테스트로 번역 (`ai`).
-3. **harness-verify** — 하니스에 이빨이 있음을 증명: 고의로 틀린 스텁이 최소 1개
+2. **plan** — 스펙(*무엇*)을 순서가 있는 구현 계획(*어떻게*)으로 변환: 확정된 토폴로지를
+   빌드 단위로 분해하고, 건드릴 파일/모듈을 지정하고, 각 단위가 닫는 기준을 매핑하고,
+   미해결 의존이 없도록 순서를 정합니다. `inline`으로 실행 — 플래닝은 새 눈이 아니라
+   인터뷰의 맥락을 원하기 때문입니다. 게이트는 모든 기준이 빌드 단위에 매핑되고 순서가
+   실행 가능한지 확인한 뒤 승인을 위해 멈춥니다 (`ai+human`).
+3. **harness-design** — 각 기준을 실행 가능한 테스트로 번역 (`ai`).
+4. **harness-verify** — 하니스에 이빨이 있음을 증명: 고의로 틀린 스텁이 최소 1개
    테스트를 실패시켜야 함 (`ai`).
-4. **implement** — 테스트를 약화하지 않고 검증된 하니스를 타겟으로 구현 (`ai`).
-5. **test** — 하니스 실행, 실패 시 `implement`로 루프백 (`ai`).
-6. **review** — *새* 서브에이전트(이전 맥락 없음, `agent: fresh`)가 `spec.md`를 기준으로
+5. **implement** — 테스트를 약화하지 않고 검증된 하니스를 타겟으로, 계획의 빌드 순서를
+   따라 구현 (`ai`).
+6. **test** — 하니스 실행, 실패 시 `implement`로 루프백 (`ai`).
+7. **review** — *새* 서브에이전트(이전 맥락 없음, `agent: fresh`)가 `spec.md`를 기준으로
    구현을 리뷰해 하니스가 잡지 못하는 것(놓친 엣지 케이스, 스코프 크리프)을 찾습니다.
    "blocking"은 객관적으로 정의됩니다(스펙 기준/엣지 케이스 위반, 또는 보안·데이터 손실
    결함). blocking 지적은 `implement`로 루프백하고(수정 시 회귀 테스트를 추가), 스테이지는

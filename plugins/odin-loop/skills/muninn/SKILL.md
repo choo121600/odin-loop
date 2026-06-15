@@ -38,9 +38,9 @@ active run's loop, else `spec-harness-tdd`.
 
    | Signal | Likely cause | Proposed edit |
    | --- | --- | --- |
-   | `most_looped_stage` = implement (high loopbacks) | spec/harness too weak; rework downstream | strengthen the `interview` or `harness-design` gate `check`; don't just raise `max_iterations` |
+   | `most_looped_stage` = implement (high loopbacks) | spec/plan/harness too weak; rework downstream | strengthen the `interview`, `plan`, or `harness-design` gate `check`; don't just raise `max_iterations` |
    | high `churn_ratio` (>2.5) + `test_runs` ≈ 0 | building without a verifiable target | recommend adopting/strengthening the harness stages; flag missing test discipline |
-   | high `avg_turns_before_first_edit` | lots of deliberation before code | the `interview` stage already captures this — confirm it's used; or add an explicit `plan` stage |
+   | high `avg_turns_before_first_edit` | lots of deliberation before code | the `interview` and `plan` stages already capture this — confirm the `plan` gate is doing its job (the default loop has one), or add a `plan` stage if a custom loop lacks one |
    | runs `abandoned` at `interview` | interview too long / fatiguing | add a question cap hint to the interview `prompt`; split into must-have vs nice-to-have |
    | a gate always passes first try (no loopbacks, all `ai`) | gate may be rubber-stamping | suggest a stricter `check`, or flip to `ai+human` for that stage |
    | `gate_failures_by_stage` concentrated on one stage | that stage's `check` is hard to satisfy as written | clarify the `check` or split the stage |

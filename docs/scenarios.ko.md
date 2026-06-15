@@ -14,9 +14,12 @@
   → interview: 핵심 질문 몇 개; spec.md가 테스트 가능한 기준으로 채워짐
   → ⏸ ai+human 게이트: 스펙 검토 후 /odin run 으로 승인
 /odin run
+  → plan: spec.md → plan.md — 빌드 단위, 파일 타겟, 빌드 순서 (inline)
+  → ⏸ ai+human 게이트: 계획 검토 후 /odin run 으로 승인
+/odin run
   → harness-design: 각 기준이 테스트가 됨 (아직 구현 없으니 red)
   → harness-verify (궁니르): 고의로 틀린 스텁이 ≥1 테스트를 실패시켜야 함 (ai, 자동)
-  → implement: 하니스를 타겟으로 구현 · test: 실행
+  → implement: 하니스를 타겟으로, 계획의 빌드 순서를 따라 구현 · test: 실행
   → 테스트 실패 → implement로 루프백 (max_iterations로 제한)
   → review (새 에이전트, 이전 맥락 없음): src/를 spec.md와 대조 검토
   → blocking 지적(스펙/엣지 케이스/보안) → implement로 (수정 시 회귀 테스트 추가); 없으면 → ⏸ ai+human 승인 → done
