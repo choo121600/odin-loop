@@ -113,18 +113,19 @@ This is the core algorithm. Drive automatically, but **stop at human gates**.
 
    a. **Execute the stage.** Follow the stage's `goal` + `prompt`. Produce the
       declared `produces` artifacts.
-      - **Execution context (`agent`).** `agent: fresh` is a recommendation, not a
-        hard guarantee — this engine is itself an LLM, so the isolation is
-        best-effort, not mechanically enforced. When a stage sets it, run that
-        stage in a NEW sub-agent (Task/Agent) that has not seen this conversation:
-        pass it only the stage `goal`/`prompt`, the task, the `consumes` artifacts
-        (read fresh from disk), and the path(s) to write its `produces` to. The
-        sub-agent writes its `produces` and assigns any blocking/non-blocking
-        labels; prefer those labels at the gate rather than re-judging from the
-        contaminated main thread. Don't quietly skip the sub-agent and judge
-        inline — that defeats the point. If `agent` is absent or `inline`, run the
-        stage yourself. (You may still use sub-agents for any heavy stage when
-        helpful.)
+      - **Execution context (`agent`).** A stage's `agent` field picks *who* runs
+        it: `inline`, `fresh`, or one of five **roles** — resolve it per
+        [Execution roles](#execution-roles-agent). Inline roles (and absent/`inline`)
+        run in this thread. Fresh roles (and bare `fresh`) run in a NEW sub-agent
+        (Task/Agent) that has not seen this conversation: pass it only the role
+        persona (`<plugin>/agents/<role>.md`), the stage `goal`/`prompt`, the task,
+        the `consumes` artifacts (read fresh from disk), and the path(s) to write
+        its `produces` to. The sub-agent writes its `produces` and assigns any
+        blocking/non-blocking labels; prefer those labels at the gate rather than
+        re-judging from the contaminated main thread. Don't quietly skip the
+        sub-agent and judge inline — that defeats the point. Fresh isolation stays
+        best-effort (the engine is itself an LLM), but a real sub-agent gets you
+        most of the way there. (You may still use sub-agents for any heavy stage.)
       - For `interview`, actually interview the user — ask, wait, refine
         `spec.md` — do not invent answers (interview is always `inline`).
       - **Deep interview stages.** When the stage declares `interview.mode: deep`,
@@ -168,6 +169,38 @@ again.
 
 ---
 
+## Execution roles (`agent`)
+
+A stage's `agent` field picks **who** runs it. It accepts:
+
+- `inline` (default) — the engine runs the stage itself, in this thread.
+- `fresh` — a generic clean-room sub-agent with no prior context (legacy; valid).
+- a **role** — one of five reusable personas shipped in `<plugin>/agents/`:
+
+  | Role       | For                                              | Edits        | Default context |
+  | ---------- | ------------------------------------------------ | ------------ | --------------- |
+  | `explore`  | read-only investigation, interview auto-assist   | no           | fresh           |
+  | `planner`  | turn spec → ordered build plan (the HOW)         | its artifact | inline          |
+  | `executor` | design harness / implement / run tests           | yes          | inline          |
+  | `critic`   | adversarial verification (Gungnir)               | stub+report  | fresh           |
+  | `reviewer` | clean review against the spec, labels findings   | report       | fresh           |
+
+Override a role's default context with the object form:
+
+```yaml
+agent: reviewer                        # role, with its default (fresh)
+agent: { role: executor, fresh: true } # executor, but isolated in a sub-agent
+```
+
+**How the engine runs a role.** The persona file `<plugin>/agents/<role>.md` is the
+behavioral contract — read it. The stage's own `goal`/`prompt`/`consumes`/`produces`
+layer on top and stay authoritative (the loop is data; the persona is only *how*
+the worker behaves). When the role is **fresh** (by default or `fresh: true`),
+spawn a sub-agent seeded ONLY with the persona, the stage goal/prompt, the task,
+the `consumes` artifacts (read fresh from disk), and the `produces` path(s) —
+nothing from this conversation. When it is **inline**, adopt the persona here.
+Either way, prefer the worker's own blocking/non-blocking labels at the gate.
+
 ## `/odin step <stage-id>`
 
 Run exactly one stage by id, regardless of `current_stage`, then evaluate its
@@ -200,9 +233,11 @@ Ask (1–2 at a time):
    And is that gate **ai** (auto) or **ai+human** (needs your approval)?
 4. When a stage fails its gate, where should it **loop back** to (`on_fail`)?
 5. What is the global `max_iterations` safety cap?
-6. Does any stage need an *independent* review — a check that must not be biased
-   by the work it inspects? If so, set `agent: fresh` on it so the engine runs it
-   in a clean-room sub-agent. Default review/audit/QA stages to `agent: fresh`.
+6. What **role** should each stage run as? Pick from `explore` / `planner` /
+   `executor` / `critic` / `reviewer` (see [Execution roles](#execution-roles-agent)),
+   or leave it `inline`. Default any independent review/audit/QA to `reviewer`, and
+   any adversarial harness check to `critic` — both run clean-room (fresh) so their
+   judgment isn't biased by the work they inspect. (Bare `agent: fresh` still works.)
 7. Does the loop open with a requirement-gathering interview? If so, offer the
    **deep interview** (`interview.mode: deep`): it confirms the work's components,
    tracks convergence to an ambiguity `threshold`, runs contrarian challenges, and
@@ -233,11 +268,13 @@ was skipped, so **fall back to the manual checks below**.
 
 The rules it enforces (the same ones to apply by hand on exit 3): unique stage ids;
 every `on_fail` points to a real stage id; every gate has a `mode`
-(`ai`|`ai+human`|`human`) and a non-empty `check`; any `agent` is `inline` or
-`fresh`; an `agent: fresh` stage declares a non-empty `consumes`. For any stage with
-`interview.mode: deep`: it is not `agent: fresh`, its `produces` includes
-`interview-log.md`, `threshold` (if set) is a number in (0, 1), and every
-`challenges` entry matches `contrarian|simplifier|ontologist@<round>`.
+(`ai`|`ai+human`|`human`) and a non-empty `check`; any `agent` is `inline`, `fresh`,
+or a role (`explore`|`planner`|`executor`|`critic`|`reviewer`) — optionally as a
+`{role, fresh}` mapping; any stage that resolves to a **fresh** context (bare
+`fresh`, a fresh-by-default role, or `fresh: true`) declares a non-empty `consumes`.
+For any stage with `interview.mode: deep`: it does not resolve to fresh, its
+`produces` includes `interview-log.md`, `threshold` (if set) is a number in (0, 1),
+and every `challenges` entry matches `contrarian|simplifier|ontologist@<round>`.
 
 ---
 
@@ -250,8 +287,12 @@ every `on_fail` points to a real stage id; every gate has a `mode`
   convenience.
 - **Hybrid means humans hold the wheel at `ai+human` gates.** Pause and wait.
 - **Never weaken a harness to pass a gate.** Fix the implementation, not the test.
-- **Fresh-agent stages are best-effort, not enforced.** `agent: fresh` asks for a
-  sub-agent with no prior context; since the engine is an LLM, that isolation is a
-  recommendation it should honor, not a guarantee. Don't quietly judge inline, and
-  prefer the sub-agent's own labels at the gate.
+- **Fresh contexts are best-effort, not enforced.** `fresh` and the fresh-by-default
+  roles (`explore`/`critic`/`reviewer`) ask for a sub-agent with no prior context;
+  since the engine is an LLM, that isolation is a recommendation it should honor,
+  not a guarantee. Don't quietly judge inline, and prefer the sub-agent's own
+  labels at the gate.
+- **Roles are *how*, the loop is *what*.** A role persona (`agents/<role>.md`) only
+  shapes behavior; never let it override a stage's `goal`/`gate`/`produces`. Stage
+  logic lives in the YAML.
 - **Loopbacks are bounded** by `max_iterations`. Report, don't spin.

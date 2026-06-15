@@ -22,7 +22,7 @@ You want to build something but the requirements are still fuzzy.
   → harness-verify (Gungnir): a known-bad stub must fail ≥1 test (ai, auto)
   → implement: build against the harness, following the plan order · test: run it
   → a test fails → loops back to implement (bounded by max_iterations)
-  → review (fresh agent, no prior context): checks src/ against spec.md
+  → review (reviewer role, a fresh agent with no prior context): checks src/ against spec.md
   → a blocking issue (spec/edge-case/security) → back to implement (fix adds a regression test); none → ⏸ ai+human sign-off → done
 ```
 
@@ -39,7 +39,7 @@ The default loop doesn't fit your work (say, a docs or research process).
   → for each stage: the gate check, and ai or ai+human?
   → where does each stage loop back on failure (on_fail)?
   → max_iterations cap?
-  → any stage that needs an independent review? → mark it agent: fresh
+  → any stage that needs a role or independent review? → assign a role (default review → reviewer) or agent: fresh
   → writes .odin-loop/loops/<name>.yaml (validated) and offers /odin run <name>
 ```
 

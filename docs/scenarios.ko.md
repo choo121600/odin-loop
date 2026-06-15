@@ -21,7 +21,7 @@
   → harness-verify (궁니르): 고의로 틀린 스텁이 ≥1 테스트를 실패시켜야 함 (ai, 자동)
   → implement: 하니스를 타겟으로, 계획의 빌드 순서를 따라 구현 · test: 실행
   → 테스트 실패 → implement로 루프백 (max_iterations로 제한)
-  → review (새 에이전트, 이전 맥락 없음): src/를 spec.md와 대조 검토
+  → review (reviewer 역할, 이전 맥락 없는 새 에이전트): src/를 spec.md와 대조 검토
   → blocking 지적(스펙/엣지 케이스/보안) → implement로 (수정 시 회귀 테스트 추가); 없으면 → ⏸ ai+human 승인 → done
 ```
 
@@ -38,7 +38,7 @@
   → 각 스테이지: 게이트 check, 그리고 ai 인가 ai+human 인가?
   → 각 스테이지는 실패 시 어디로 루프백하나 (on_fail)?
   → max_iterations 상한은?
-  → 독립적 리뷰가 필요한 스테이지가 있나? → agent: fresh로 표시
+  → 역할이나 독립적 리뷰가 필요한 스테이지가 있나? → 역할 지정(기본 review → reviewer)이나 agent: fresh
   → .odin-loop/loops/<name>.yaml 작성(검증됨) 후 /odin run <name> 제안
 ```
 

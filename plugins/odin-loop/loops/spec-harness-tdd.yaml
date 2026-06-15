@@ -16,13 +16,20 @@
 #     prompt        : instructions the engine follows to execute the stage
 #     consumes      : artifacts this stage reads   (hints)
 #     produces      : artifacts this stage writes  (hints)
-#     agent         : execution context for this stage (optional)
+#     agent         : who runs this stage (optional). One of:
 #                     inline (default) -> the engine runs the stage itself
-#                     fresh            -> spawn a NEW sub-agent with NO prior
-#                                         conversation context; pass it only the
-#                                         `consumes` artifacts + the task. Use for
-#                                         an independent review/audit that must
-#                                         not be biased by the work it reviews.
+#                     fresh            -> a generic clean-room sub-agent (no prior
+#                                         conversation context)
+#                     a ROLE           -> a reusable persona from <plugin>/agents/:
+#                                           explore  read-only scout      (fresh)
+#                                           planner  spec -> build plan    (inline)
+#                                           executor harness/implement/test (inline)
+#                                           critic   adversarial verify     (fresh)
+#                                           reviewer clean review + labels  (fresh)
+#                     Object form overrides a role's default context:
+#                                           agent: { role: executor, fresh: true }
+#                     Any stage that resolves to a fresh context needs `consumes`
+#                     (its only input channel) and is not biased by this thread.
 #     interview     : opt a requirement-gathering stage into the deep-interview
 #                     playbook (skills/loop-engine/deep-interview.md). Optional.
 #       mode        : deep    -> run the playbook (topology + convergence +
@@ -42,7 +49,7 @@
 # =============================================================================
 
 name: spec-harness-tdd
-version: 5
+version: 6
 description: Clarify requirements -> plan implementation -> design harness -> verify harness -> implement -> test -> clean review
 max_iterations: 15
 
@@ -113,7 +120,7 @@ stages:
   - id: plan
     title: Implementation Planning
     goal: Turn the spec (WHAT) into an ordered implementation plan (HOW) — decompose the topology into build units, sequence them, name file/module targets, flag risks
-    agent: inline
+    agent: planner
     prompt: |
       Turn spec.md into an actionable build plan. This is the HOW, not the WHAT:
       do NOT re-derive or restate the acceptance criteria — that is spec.md's job,
@@ -151,6 +158,7 @@ stages:
   - id: harness-design
     title: Harness Design
     goal: Translate each acceptance criterion in the spec into an executable test harness
+    agent: executor
     prompt: |
       Write an automated test for each criterion in spec.md.
       - There is no implementation (src) yet, so tests are expected to fail.
@@ -170,6 +178,7 @@ stages:
   - id: harness-verify
     title: Harness Verification (Gungnir · the spear that never misses)
     goal: Verify the harness itself — does it fail wrong implementations and pass right ones?
+    agent: critic
     prompt: |
       Confirm the harness's discriminating power.
       - Create a known-bad stub (a deliberately wrong minimal implementation)
@@ -190,6 +199,7 @@ stages:
   - id: implement
     title: Implement
     goal: Write the real implementation, targeting the spec and the verified harness
+    agent: executor
     prompt: |
       Implement so that spec.md is satisfied and harness/ tests pass.
       - Do not weaken or delete tests to make the harness pass.
@@ -207,6 +217,7 @@ stages:
   - id: test
     title: Test with Harness
     goal: Final verification of the implementation with the verified harness
+    agent: executor
     prompt: |
       Run all tests in harness/ and report the results.
       On failure, go back to implement and fix it (fix the implementation,
@@ -221,7 +232,7 @@ stages:
   - id: review
     title: Clean Review (fresh agent)
     goal: Have an uncontaminated agent review the implementation against the spec
-    agent: fresh
+    agent: reviewer
     prompt: |
       Review the finished implementation with fresh eyes. This stage runs in a
       FRESH sub-agent that has NOT seen the implementation conversation, so its

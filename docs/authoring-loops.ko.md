@@ -60,10 +60,13 @@ YAML을 읽어 **스테이지(stage)**를 순서대로 밟아 나가며, 각 스
   작성하세요.
 - **on_fail** — 게이트가 실패했을 때 되돌아갈 스테이지 `id`. 생략하면 같은
   스테이지를 단순히 다시 시도합니다.
-- **agent** — 스테이지가 *어디서* 실행되는지. 생략하거나 `inline`이면 엔진이 직접
-  실행합니다. `agent: fresh`로 설정하면 이전 대화 맥락이 없는 클린룸 서브에이전트에서
-  실행됩니다 — 검사 대상 작업에 편향되면 안 되는 독립적 리뷰·감사용입니다(그 스테이지의
-  `consumes` 산출물만 봅니다).
+- **agent** — *누가* 어디서 스테이지를 실행하는지. 생략하거나 `inline`이면 엔진이
+  직접 실행하고, `fresh`이면 이전 대화 맥락이 없는 클린룸 서브에이전트에서 실행됩니다
+  (그 스테이지의 `consumes` 산출물만 봅니다). `agent`는 다섯 가지 재사용 가능한
+  **역할(role)** — `explore`, `planner`, `executor`, `critic`, `reviewer` — 중 하나를
+  지정할 수도 있으며, 각 역할은 워커가 *어떻게* 행동하는지를 규정하는 페르소나입니다.
+  역할은 단순 문자열(`agent: reviewer`, 역할의 기본 컨텍스트 사용) 또는 그것을 덮어쓰는
+  객체(`agent: { role: executor, fresh: true }`)로 쓸 수 있습니다. §4½ 참고.
 - **interview** — *선택*, 요구사항 수집 스테이지용. `interview.mode: deep`으로 설정하면
   **딥 인터뷰 플레이북**을 실행합니다: 작업의 컴포넌트를 확정(토폴로지)하고, 매 라운드
   명확도를 자가 채점해 ambiguity가 `threshold` 이하가 될 때까지 돌리며, contrarian
@@ -102,7 +105,9 @@ stages:
       Do the thing. Be specific about what "done" looks like.
     consumes: [some-input.md]   # 이 스테이지가 읽는 산출물   (힌트, 선택)
     produces: [some-output.md]  # 이 스테이지가 쓰는 산출물   (힌트, 선택)
-    agent: inline               # inline (기본) | fresh (클린룸 서브에이전트)
+    agent: inline               # inline (기본) | fresh | 역할(role)
+                                #   role: explore | planner | executor | critic | reviewer
+                                #   또는 { role: executor, fresh: true } 로 컨텍스트 override
     interview:                  # 선택 — 이 스테이지를 딥 인터뷰 플레이북에 편입
       mode: deep                #   (토폴로지 + 수렴 + 챌린지 + 자동 보조).
       threshold: 0.15           #   딥 인터뷰는 interview-log.md도 produces 합니다.
@@ -151,6 +156,38 @@ stages:
 
 ---
 
+## 4½. 실행 역할 (누가 스테이지를 실행하는가)
+
+기본적으로 스테이지는 `inline`(엔진 스레드 안)이나 `fresh`(일반 클린룸 서브에이전트)로
+실행됩니다. 여기에 더해, `plugins/odin-loop/agents/<role>.md`에 제공되는 재사용 가능한
+**명명된 역할(role)** 다섯 가지 중 하나를 스테이지에 부여할 수 있습니다. 역할은 워커가
+*어떻게* 행동하는지를 규정할 뿐이며, YAML의 `goal`/`gate`/`prompt`/`produces`가 여전히
+권위를 가집니다 — 루프는 데이터이고, 역할은 그것을 실행하는 방식일 뿐입니다.
+
+| 역할        | 용도                                              | 편집?               | 기본 컨텍스트 |
+| ---------- | ------------------------------------------------- | ------------------- | ------------- |
+| `explore`  | 읽기 전용 조사, 인터뷰 자동 보조                    | 안 함               | fresh         |
+| `planner`  | 스펙 → 순서 있는 빌드 계획(HOW)으로 변환            | 자기 산출물만        | inline        |
+| `executor` | 하니스 설계 / 구현 / 테스트 실행                    | 함                  | inline        |
+| `critic`   | 적대적 검증(궁니르)                                | 스텁 + 리포트만      | fresh         |
+| `reviewer` | 스펙 기준 클린 리뷰, 지적에 라벨 부여               | 리포트만             | fresh         |
+
+**기본 컨텍스트**는 그 역할이 `fresh`(이전 대화가 없는 클린룸 서브에이전트)로 도는지,
+`inline`(엔진 스레드 안)으로 도는지를 뜻합니다. 단순 문자열로 쓰면 기본값을 따르고,
+객체로 쓰면 덮어쓸 수 있습니다:
+
+```yaml
+agent: reviewer                      # 단순 문자열 — 역할의 기본값 사용 (fresh)
+agent: { role: executor, fresh: true }   # 객체 — executor를 fresh 서브에이전트에서 실행
+```
+
+`inline`과 `fresh`는 그 자체로도 변함없이 동작합니다. 내장 `spec-harness-tdd` 루프는
+이제 전반에 역할을 씁니다: `plan` → `planner`, `harness-design` → `executor`,
+`harness-verify` → `critic`, `implement` / `test` → `executor`,
+`review` → `reviewer`.
+
+---
+
 ## 5. 루프를 작성하는 두 가지 방법
 
 ### (a) 직접 작성
@@ -179,8 +216,9 @@ stages:
 3. 각 스테이지의 게이트 check는 무엇이고 — `ai`인가요, `ai+human`인가요?
 4. 스테이지가 게이트에 실패하면 어디로 되돌아가야 하나요(`on_fail`)?
 5. 전역 `max_iterations` 상한은 얼마인가요?
-6. 검사 대상 작업에 편향되면 안 되는 독립적 리뷰가 필요한 스테이지가 있나요? 있다면
-   `agent: fresh`(클린룸 서브에이전트)로 표시됩니다.
+6. 전용 페르소나나, 검사 대상 작업에 편향되면 안 되는 독립적 리뷰가 필요한 스테이지가
+   있나요? 있다면 **역할**(예: 클린룸 서브에이전트로 도는 `reviewer`나 `critic`)이나
+   평범한 `agent: fresh`로 지정됩니다(§4½ 참고).
 7. 루프가 요구사항 수집 인터뷰로 시작하나요? 그렇다면 **딥 인터뷰**
    (`interview.mode: deep`)를 제안하고 `threshold`, `challenges`, `auto_assist`를
    받습니다(§6½ 참고).
@@ -334,10 +372,12 @@ stages:
 - 모든 **스테이지 `id`는 고유**해야 합니다.
 - 모든 **`on_fail`은 같은 루프 안의 실제 스테이지 `id`를 가리켜야** 합니다.
 - 모든 **게이트는 `mode`와 `check`를 모두** 가져야 합니다.
-- 모든 **`agent`는 `inline` 또는 `fresh`** 중 하나여야 하며, `agent: fresh` 스테이지는
-  **비어 있지 않은 `consumes`를 선언**해야 하고(유일한 입력 채널), 사용자와 대화하는
-  스테이지는 절대 `fresh`가 아닙니다.
-- 모든 **`interview.mode: deep`** 스테이지는 `agent: fresh`가 아니고, `produces`에
+- 모든 **`agent`는 `inline`, `fresh`, 또는 역할**(`explore` | `planner` |
+  `executor` | `critic` | `reviewer`) 중 하나여야 하며, 선택적으로 `{ role, fresh }`
+  매핑으로 쓸 수 있습니다. **fresh 컨텍스트로 귀결되는**(단순 `fresh`, fresh가 기본인
+  역할, 또는 `fresh: true`) 스테이지는 **비어 있지 않은 `consumes`를 선언**해야 하고
+  (유일한 입력 채널), 사용자와 대화하는 스테이지는 절대 fresh로 귀결되지 않습니다.
+- 모든 **`interview.mode: deep`** 스테이지는 fresh 컨텍스트로 귀결되지 않고, `produces`에
   `interview-log.md`를 포함하며, `threshold`가 (0, 1) 범위의 수이고, 모든 `challenges`
   항목이 `contrarian|simplifier|ontologist@<round>` 형식입니다.
 

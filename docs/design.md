@@ -45,10 +45,16 @@ Each stage has a `goal`, a `prompt` the engine follows, optional `consumes` /
 - `mode: ai` — the engine judges the `check` honestly and advances automatically.
 - `mode: ai+human` — the engine judges, then **pauses** for your approval.
 - `on_fail` — the stage id to loop back to on failure.
-- `agent: fresh` — run the stage in a clean-room sub-agent with no prior
-  conversation context, for an independent review/audit the rest of the run can't
-  bias (it sees only the stage's `consumes` artifacts). Omit it, or `inline`, to
-  run the stage in the engine itself.
+- `agent` — *who* runs the stage. Omit it (or `inline`) to run it in the engine
+  itself; `fresh` runs it in a clean-room sub-agent with no prior conversation
+  context, for an independent review/audit the rest of the run can't bias (it sees
+  only the stage's `consumes` artifacts). `agent` can also name one of five
+  reusable **roles** — `explore` (read-only scout, fresh), `planner` (spec → build
+  plan, inline), `executor` (harness/implement/test, inline), `critic` (adversarial
+  verify, fresh), `reviewer` (clean review, fresh) — each a persona shipped at
+  `plugins/odin-loop/agents/<role>.md`. A role is a bare string for its default
+  context, or `{ role, fresh }` to override it. The role governs *how* the worker
+  behaves; the stage's `goal`/`gate`/`prompt`/`produces` stay authoritative.
 - A global **`max_iterations`** caps gate failures (loopbacks) so a failing loop
   reports instead of spinning forever; happy-path runs are not counted.
 
