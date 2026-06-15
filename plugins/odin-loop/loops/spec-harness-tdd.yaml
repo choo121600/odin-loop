@@ -23,6 +23,15 @@
 #                                         `consumes` artifacts + the task. Use for
 #                                         an independent review/audit that must
 #                                         not be biased by the work it reviews.
+#     interview     : opt a requirement-gathering stage into the deep-interview
+#                     playbook (skills/loop-engine/deep-interview.md). Optional.
+#       mode        : deep    -> run the playbook (topology + convergence +
+#                               challenges + auto-assist), not just the prompt
+#       threshold   : stop when self-scored ambiguity <= this (0..1, default 0.15)
+#       challenges  : contrarian-perspective probes, as <kind>@<round>
+#                     (default [contrarian@4, simplifier@6, ontologist@8])
+#       auto_assist : enable auto-research / auto-answer sub-agents (default true)
+#                     A deep interview stays inline and produces interview-log.md.
 #     gate          : the advance condition
 #       mode        : ai        -> engine judges, auto-advances on pass
 #                     ai+human  -> engine judges, then PAUSES for human approval
@@ -33,7 +42,7 @@
 # =============================================================================
 
 name: spec-harness-tdd
-version: 3
+version: 4
 description: Clarify requirements -> design harness -> verify harness -> implement -> test -> clean review
 max_iterations: 15
 
@@ -42,28 +51,37 @@ stages:
   - id: interview
     title: Deep Interview (Huginn)
     goal: Turn a vague request into a list of observable, testable acceptance criteria
+    interview:
+      mode: deep
+      threshold: 0.15
+      challenges: [contrarian@4, simplifier@6, ontologist@8]
+      auto_assist: true
     prompt: |
       Interview the user deeply. Most failures come from "intent", not coding,
       so the goal of this stage is an agreed-upon spec.md, not code.
 
-      Process
-      - Ask only 1-2 key questions at a time (don't exhaust the user).
-      - Update spec.md every time you get an answer (keep the template below).
-      - Confirm the underlying "goal (why)" before the proposed "solution".
-        Even if the user named a solution, push back once to check it actually
-        solves the real problem.
-      - Prioritize the most important questions. Don't force items the user
-        doesn't know yet — park them under "Open Questions" as risks.
+      This stage runs the DEEP-INTERVIEW PLAYBOOK (deep-interview.md): confirm the
+      work's topology (1-6 components) in Round 0, then score clarity each round
+      and record convergence into interview-log.md until ambiguity <= threshold.
+      The playbook owns that procedure (one question at a time, the auto-assist
+      sub-agents, and the contrarian/simplifier/ontologist challenges). What
+      follows is the DOMAIN FRAMING the playbook wraps.
 
-      Dimensions you must cover (mark "out of scope" if not applicable)
-      1. Core behavior — what goes in, what must come out
-      2. Non-functional — performance / scale / security / compatibility
-      3. Failure/error behavior — expected behavior on bad input, edges, faults
-      4. Data/contracts — input/output shapes, external interfaces
-      5. Dependencies/integration — systems it must work with
-      6. Users/context — who uses it, in what environment
-      7. Success criteria — how "done" is judged objectively
-      8. Constraints — stack / deadline / things it must NOT do
+      Confirm the underlying "goal (why)" before the proposed "solution". Even if
+      the user named a solution, push back once to check it actually solves the
+      real problem. Park anything the user doesn't know yet under "Open Questions"
+      as a risk rather than forcing an answer.
+
+      Dimensions to probe (mark "out of scope" if not applicable). Each feeds one
+      of the playbook's scoring buckets — goal / constraints / criteria / context:
+      1. Core behavior — what goes in, what must come out          (goal, criteria)
+      2. Non-functional — performance / scale / security / compat  (constraints)
+      3. Failure/error behavior — bad input, edges, faults         (criteria)
+      4. Data/contracts — input/output shapes, external interfaces (criteria)
+      5. Dependencies/integration — systems it must work with      (context)
+      6. Users/context — who uses it, in what environment          (goal, context)
+      7. Success criteria — how "done" is judged objectively       (criteria)
+      8. Constraints — stack / deadline / things it must NOT do    (constraints)
 
       Acceptance-criteria rules
       - Write them "observable and testable". Use Given-When-Then when possible.
@@ -73,23 +91,23 @@ stages:
       spec.md structure (fixed)
         # <task>
         ## Goal (underlying goal)
-        ## Acceptance Criteria   # each item testable, numbered
+        ## Topology              # active components (+ deferred, marked out of scope)
+        ## Acceptance Criteria   # each item testable, numbered; covers every component
         ## Assumptions
         ## Out of Scope          # explicit non-goals
         ## Edge Cases
         ## Open Questions        # undecided / risks (write "none" if empty)
-
-      End the interview when every dimension is covered (including non-goals)
-      and every criterion is testable (= gate).
-    produces: [spec.md]
+        ## Convergence           # final scores + ambiguity + ontology stability trace
+    produces: [spec.md, interview-log.md]
     gate:
       mode: ai+human
       check: >
-        Every requirement in spec.md is expressed as a testable acceptance
-        criterion with no ambiguous or open-to-interpretation items; all 8
-        question dimensions are each covered (or explicitly excluded under Out
-        of Scope); and every item under Open Questions is either resolved or
-        explicitly accepted as a non-blocking risk (no unresolved blocking risk).
+        interview-log.md shows run-level ambiguity has fallen to or below the
+        configured threshold (0.15); every component confirmed in the Round 0
+        topology is covered in spec.md by at least one observable, testable
+        acceptance criterion (no well-described component standing in for a vague
+        one); and every item under Open Questions is either resolved or explicitly
+        accepted as a non-blocking risk (no unresolved blocking risk).
 
   # ---------------------------------------------------------------------------
   - id: harness-design

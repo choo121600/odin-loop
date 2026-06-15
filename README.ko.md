@@ -26,8 +26,11 @@ deep interview → harness design → harness verify → implement → test → 
 ## 기본 루프가 이렇게 설계된 이유
 
 - **deep interview 먼저** — AI 코딩 실패의 대부분은 코딩 실패가 아니라 *의도* 실패입니다.
-  인터뷰는 고정된 차원 집합을 훑어, 코드를 쓰기 전에 모호한 요청을 *테스트 가능한
-  acceptance criteria*로 — 구조화된 `spec.md`에 담아 — 바꿉니다.
+  인터뷰는 작업의 **컴포넌트**(토폴로지)를 확정하고, 고정된 차원 집합을 훑으며, 매 라운드
+  **명확도를 자가 채점**해 ambiguity가 임계값 아래로 떨어질 때까지 — 그 과정에서 contrarian
+  챌린지와 자동 보조를 주입하며 — 돌립니다. 코드를 쓰기 전에 모호한 요청을 *테스트 가능한
+  acceptance criteria*로(구조화된 `spec.md`에 담고, 수렴 추적은 `interview-log.md`에) 바꿉니다.
+  ([설계 → 딥 인터뷰](docs/design.ko.md#딥-인터뷰-후긴) 참고.)
 - **구현보다 하니스 먼저** — criteria가 실행 가능한 테스트가 되므로, "완료"에 객관적
   정의가 생깁니다.
 - **하니스 자체를 검증 (궁니르)** — 대부분의 도구가 건너뛰는 단계입니다. 항상 통과하는
@@ -117,10 +120,14 @@ stages:
 
 ## 상태
 
-`v0.3.0` — 클린룸 **review** 스테이지 추가(새 best-effort 서브에이전트가 결과를
-스펙과 대조 리뷰) + 1급 `agent: inline | fresh` 스테이지 필드. 그 외 v0.2.0:
-인터뷰 스테이지 심화(8개 차원 커버리지 게이트 + 구조화된 `spec.md`); v0.1.1:
-엔진 + 기본 루프 + 커스텀 루프 작성 + 무닌(`/odin refine`) 세션 마이닝 교정.
+`v0.4.0` — **딥 인터뷰 플레이북**: 인터뷰가 멀티 컴포넌트 **토폴로지**를 확정하고,
+매 라운드 **명확도를 자가 채점**해 ambiguity 임계값까지 수렴(`interview-log.md`에
+추적)하며, contrarian/simplifier/ontologist **챌린지**를 주입하고 **자동 보조**까지 —
+스테이지별로 `interview.mode: deep`으로 opt-in. 여기에 결정론적 루프 검증기
+(`scripts/validate_loop.py`)를 `/odin run`·`/odin new`에 연결. 이전: v0.3.0 클린룸
+**review** 스테이지 + `agent: inline | fresh`; v0.2.0 인터뷰 심화(8개 차원 게이트 +
+구조화된 `spec.md`); v0.1.1 엔진 + 기본 루프 + 커스텀 루프 작성 + 무닌(`/odin refine`)
+세션 마이닝 교정.
 
 ## 라이선스
 

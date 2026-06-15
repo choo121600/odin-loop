@@ -64,6 +64,10 @@ YAML을 읽어 **스테이지(stage)**를 순서대로 밟아 나가며, 각 스
   실행합니다. `agent: fresh`로 설정하면 이전 대화 맥락이 없는 클린룸 서브에이전트에서
   실행됩니다 — 검사 대상 작업에 편향되면 안 되는 독립적 리뷰·감사용입니다(그 스테이지의
   `consumes` 산출물만 봅니다).
+- **interview** — *선택*, 요구사항 수집 스테이지용. `interview.mode: deep`으로 설정하면
+  **딥 인터뷰 플레이북**을 실행합니다: 작업의 컴포넌트를 확정(토폴로지)하고, 매 라운드
+  명확도를 자가 채점해 ambiguity가 `threshold` 이하가 될 때까지 돌리며, contrarian
+  챌린지를 주입하고, 자동 보조를 씁니다. §6½ 참고.
 - **max_iterations** — 게이트 실패(루프백) 횟수에 대한 전역 안전 상한이며,
   해피패스 스테이지 실행은 세지 않습니다. 루프가 무한히 도는 것을 막아 줍니다.
   루프백이 이 값을 넘으면, 엔진은 다시 반복하는 대신 멈추고 보고합니다.
@@ -99,6 +103,11 @@ stages:
     consumes: [some-input.md]   # 이 스테이지가 읽는 산출물   (힌트, 선택)
     produces: [some-output.md]  # 이 스테이지가 쓰는 산출물   (힌트, 선택)
     agent: inline               # inline (기본) | fresh (클린룸 서브에이전트)
+    interview:                  # 선택 — 이 스테이지를 딥 인터뷰 플레이북에 편입
+      mode: deep                #   (토폴로지 + 수렴 + 챌린지 + 자동 보조).
+      threshold: 0.15           #   딥 인터뷰는 interview-log.md도 produces 합니다.
+      challenges: [contrarian@4, simplifier@6, ontologist@8]
+      auto_assist: true
     gate:
       mode: ai           # ai | ai+human | human
       check: the observable condition that must be true to advance
@@ -107,6 +116,7 @@ stages:
 
 `consumes`와 `produces`는 스테이지 간 데이터 흐름을 문서화하는 힌트입니다. 어떤
 스테이지가 어떤 산출물을 읽고 쓰는지 엔진(과 여러분)이 파악하는 데 도움을 줍니다.
+`interview` 블록은 선택이며 요구사항 수집 스테이지에서만 의미가 있습니다 — §6½ 참고.
 
 ---
 
@@ -171,6 +181,9 @@ stages:
 5. 전역 `max_iterations` 상한은 얼마인가요?
 6. 검사 대상 작업에 편향되면 안 되는 독립적 리뷰가 필요한 스테이지가 있나요? 있다면
    `agent: fresh`(클린룸 서브에이전트)로 표시됩니다.
+7. 루프가 요구사항 수집 인터뷰로 시작하나요? 그렇다면 **딥 인터뷰**
+   (`interview.mode: deep`)를 제안하고 `threshold`, `challenges`, `auto_assist`를
+   받습니다(§6½ 참고).
 
 그런 다음 유효한 루프 YAML을 `.odin-loop/loops/<name>.yaml`에 작성하고, 그
 내용을 다시 보여 주며, `/odin run <name>`으로 시작하도록 안내합니다.
@@ -267,6 +280,53 @@ stages:
 
 ---
 
+## 6½. 더 깊이: 딥 인터뷰 (선택)
+
+루프가 요구사항을 *당신에게 인터뷰하는* 스테이지로 시작한다면, `interview:` 블록을
+추가해 평범한 프롬프트에서 **딥 인터뷰 플레이북**으로 업그레이드할 수 있습니다:
+
+```yaml
+- id: interview
+  title: Deep Interview (Huginn)
+  goal: Turn a vague request into testable acceptance criteria
+  interview:
+    mode: deep                 # 프롬프트만이 아니라 플레이북을 실행
+    threshold: 0.15            # 자가 채점 ambiguity ≤ 이 값일 때 종료 (0..1)
+    challenges: [contrarian@4, simplifier@6, ontologist@8]   # contrarian 프로브
+    auto_assist: true          # 읽기 전용 후보답 / opt-out 서브에이전트
+  prompt: |
+    (도메인 프레이밍만 — 어떤 차원을 캐물을지; 절차는 플레이북이 담당)
+  produces: [spec.md, interview-log.md]
+  gate:
+    mode: ai+human
+    check: >
+      interview-log.md의 ambiguity ≤ threshold; 모든 토폴로지 컴포넌트가 spec.md에서
+      테스트 가능한 기준으로 커버됨; 미해결 blocking 질문 없음.
+```
+
+각 노브의 역할:
+
+- **`mode: deep`** — 유일한 필수 필드. 엔진이 프롬프트만 따르는 대신 플레이북
+  (`skills/loop-engine/deep-interview.md`)을 실행하게 합니다: 작업을 **1~6개
+  컴포넌트**(토폴로지)로 열거·확정한 뒤, 한 번에 한 질문씩 돌리며 매 라운드 **명확도를
+  자가 채점**합니다.
+- **`threshold`** — 게이트. 매 라운드 엔진이 `ambiguity = 1 − Σ(clarity × weight)`를
+  `interview-log.md`에 기록하고, ambiguity ≤ `threshold`가 되어야 전진합니다. 낮을수록
+  엄격(`0.15`가 무난한 기본값, 빠른 통과는 `0.30`). 이 점수는 계산된 지표가 아니라
+  정직한 **자가 평가**입니다 — Odin-Loop엔 코드 런타임이 없으므로 — 가치는 거짓
+  정밀도가 아니라 기록되어 들여다볼 수 있는 추적에 있습니다.
+- **`challenges`** — 명시된 라운드에 고정 각도의 프로브를 주입: `contrarian`("반대가
+  참이라면?"), `simplifier`("가치를 지키는 가장 단순한 버전은?"), `ontologist`("이건
+  사실 무엇인가?").
+- **`auto_assist`** — 읽기 전용 서브에이전트가 (그린필드 질문에) 순위 매긴 후보 답을
+  제안하거나, 당신이 건너뛴 질문을 해소하게 합니다. 결코 대신 결정하지는 않습니다.
+
+딥 인터뷰는 항상 `inline`이고(당신과 대화해야 하므로) `spec.md`와 함께
+**`interview-log.md`를 produces** 합니다. 위처럼 게이트 `check`를 ledger 기준으로
+작성하세요.
+
+---
+
 ## 7. 검증하고, 실행하고, 다음으로
 
 실행하기 전에, 엔진이 검증하는 규칙에 맞춰 YAML을 점검하세요:
@@ -277,6 +337,19 @@ stages:
 - 모든 **`agent`는 `inline` 또는 `fresh`** 중 하나여야 하며, `agent: fresh` 스테이지는
   **비어 있지 않은 `consumes`를 선언**해야 하고(유일한 입력 채널), 사용자와 대화하는
   스테이지는 절대 `fresh`가 아닙니다.
+- 모든 **`interview.mode: deep`** 스테이지는 `agent: fresh`가 아니고, `produces`에
+  `interview-log.md`를 포함하며, `threshold`가 (0, 1) 범위의 수이고, 모든 `challenges`
+  항목이 `contrarian|simplifier|ontologist@<round>` 형식입니다.
+
+이걸 손으로 점검할 필요는 없습니다 — 함께 제공되는 검증기가 결정론적으로 확인합니다:
+
+```
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate_loop.py" .odin-loop/loops/<name>.yaml
+```
+
+blocking 에러가 있으면 출력하고(exit `1`), 없으면 루프가 유효함을 확인합니다(exit `0`).
+`/odin new`와 `/odin run`이 시작 전에 대신 실행해 줍니다. (PyYAML이 필요하며, 설치되어
+있지 않으면 exit `3`로 위 체크리스트로 폴백합니다.)
 
 그런 다음 엔진이 루프를 인식하는지 확인하고 시작하세요:
 
