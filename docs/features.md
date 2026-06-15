@@ -38,10 +38,15 @@ interview → harness-design → harness-verify → implement → test → revie
                                                          (fresh agent)
 ```
 
-1. **interview** — turn a vague request into a structured `spec.md`: confirm the
-   underlying goal, probe eight dimensions (behavior, failure modes, data,
-   dependencies, constraints, …), and reduce every requirement to a testable
-   acceptance criterion. The gate checks coverage, not just phrasing (`ai+human`).
+1. **interview** — turn a vague request into a structured `spec.md`. It runs the
+   **deep-interview playbook** (`interview.mode: deep`): confirm the work's
+   **topology** (1–6 components), probe eight dimensions, and **self-score clarity
+   each round** into `interview-log.md` until ambiguity drops to the `threshold`.
+   Scheduled **contrarian / simplifier / ontologist** challenges attack the emerging
+   spec, and read-only **auto-assist** sub-agents propose candidate answers or resolve
+   opt-outs (never deciding for you). The gate reads the convergence ledger — every
+   component covered by a testable criterion, ambiguity ≤ threshold (`ai+human`).
+   See [Design → Deep interview](design.md#deep-interview-huginn).
 2. **harness-design** — translate each criterion into an executable test (`ai`).
 3. **harness-verify** — prove the harness has teeth: a deliberately-wrong stub must
    make at least one test fail (`ai`).

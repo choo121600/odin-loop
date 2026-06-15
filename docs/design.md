@@ -54,6 +54,29 @@ Each stage has a `goal`, a `prompt` the engine follows, optional `consumes` /
 
 Gates are meant to be judged honestly: a gate that rubber-stamps proves nothing.
 
+## Deep interview (Huginn)
+
+A requirement-gathering stage can opt into the **deep-interview playbook** by
+declaring `interview.mode: deep`. The playbook
+([`skills/loop-engine/deep-interview.md`](../plugins/odin-loop/skills/loop-engine/deep-interview.md))
+turns the interview from "ask until it feels done" into a measured loop:
+
+- **Topology** — Round 0 enumerates the work as 1–6 components and confirms them
+  with you, so a well-described part can't mask a vague sibling.
+- **Convergence** — each round self-scores clarity per dimension and records
+  `ambiguity = 1 − Σ(clarity × weight)` into `interview-log.md`; the gate advances
+  only when ambiguity ≤ the configured `threshold`. Odin-Loop has no code runtime,
+  so these scores are an **honest self-assessment by the engine, not a computed
+  metric** — the value is the written, inspectable trail, not false precision.
+- **Challenges** — at scheduled rounds it injects contrarian / simplifier /
+  ontologist probes that attack the emerging spec from a fixed angle.
+- **Auto-assist** — read-only sub-agents propose ranked candidate answers
+  (greenfield) or resolve a question you opt out of, without ever deciding for you.
+
+The stage `prompt` still supplies the domain framing; the playbook supplies the
+procedure. `spec.md` is the deliverable; `interview-log.md` is the evidence the
+gate reads.
+
 ## Run state (`state.json`)
 
 Each run persists its state so it can be resumed across sessions. The key fields:
@@ -67,6 +90,7 @@ Each run persists its state so it can be resumed across sessions. The key fields
   "iterations": { "implement": 2, "test": 2 },
   "total_iterations": 4,
   "max_iterations": 15,
+  "interview": { "threshold": 0.15, "rounds": 4, "ambiguity": 0.13, "topology": ["Ingestion", "Export"] },
   "history": [
     { "stage": "interview", "result": "pass", "gate": "approved", "at": "..." },
     { "stage": "review", "result": "pass", "gate": "approved", "at": "...", "agent": "fresh" }
@@ -76,6 +100,8 @@ Each run persists its state so it can be resumed across sessions. The key fields
 
 `current_stage` is where the run resumes; `history` is the audit trail of gate
 decisions; `total_iterations` is checked against `max_iterations` on every loopback.
+The optional `interview` object appears only for a deep-interview stage and mirrors
+its convergence (see [Deep interview](#deep-interview-huginn)).
 
 ## Where artifacts live
 

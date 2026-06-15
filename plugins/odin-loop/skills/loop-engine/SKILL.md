@@ -75,6 +75,12 @@ and "promote" the harness out of the run dir explicitly.
   "total_iterations": 4,
   "max_iterations": 15,
   "artifacts": { "spec.md": ".odin-loop/runs/<id>/spec.md" },
+  "interview": {
+    "threshold": 0.15,
+    "rounds": 4,
+    "ambiguity": 0.13,
+    "topology": ["Ingestion", "Normalization", "Review UI", "Export"]
+  },
   "history": [
     { "stage": "interview", "result": "pass", "gate": "approved", "at": "..." },
     { "stage": "review", "result": "pass", "gate": "approved", "at": "...", "agent": "fresh" }
@@ -83,6 +89,8 @@ and "promote" the harness out of the run dir explicitly.
 ```
 
 `iterations[stage]` counts how many times a gate failure looped back into that stage; `total_iterations` is their sum, checked against `max_iterations` on every loopback. Happy-path stage runs are not counted.
+
+The optional `interview` object is written only by a deep-interview stage (`interview.mode: deep`): it mirrors the convergence the engine is tracking in `interview-log.md` so `/odin status` can show it. See `deep-interview.md` for the full procedure.
 
 ---
 
@@ -96,7 +104,10 @@ This is the core algorithm. Drive automatically, but **stop at human gates**.
      again, treat that as **approval** of the paused stage: record
      `gate: approved` in history, then advance to the next stage.
    - If no run exists, ask which loop (default `spec-harness-tdd`) and what the
-     user is building, create `state.json`, set `current_stage` to the first stage.
+     user is building, then **validate the resolved loop YAML** (see
+     [Validating a loop](#validating-a-loop)) before creating the run — refuse to
+     start a loop with blocking errors. Then create `state.json` and set
+     `current_stage` to the first stage.
 
 2. **Loop over stages** starting from `current_stage`:
 
@@ -116,6 +127,15 @@ This is the core algorithm. Drive automatically, but **stop at human gates**.
         helpful.)
       - For `interview`, actually interview the user — ask, wait, refine
         `spec.md` — do not invent answers (interview is always `inline`).
+      - **Deep interview stages.** When the stage declares `interview.mode: deep`,
+        don't just follow its `prompt` — run it per the **deep-interview playbook**
+        (`deep-interview.md` in this skill dir). That means: confirm the work's
+        **topology** (1–6 components) in Round 0, **self-score clarity** every round
+        and record the convergence into `interview-log.md`, fire the **challenge
+        schedule** (`interview.challenges`), and use the **auto-assist** sub-agents
+        when `auto_assist` is on. The stage's gate reads `interview-log.md` (ambiguity
+        ≤ `threshold`, every component covered). The `prompt` still supplies the
+        domain framing; the playbook supplies the procedure.
 
    b. **Evaluate the gate.** Judge `gate.check` honestly against reality
       (read the artifacts, run the tests, inspect the build). Decide pass/fail.
@@ -158,7 +178,8 @@ stepped stage. Use this for manual override / redo.
 
 Read `state.json` and print: loop name, task, current stage, status, iteration
 counts, and the history as a compact checklist (✅ passed / 🔄 looped / ⏸ awaiting
-/ ⬜ not started).
+/ ⬜ not started). If an `interview` block is present, also show its convergence:
+rounds so far, current ambiguity vs `threshold`, and the confirmed topology.
 
 ## `/odin list`
 
@@ -182,12 +203,41 @@ Ask (1–2 at a time):
 6. Does any stage need an *independent* review — a check that must not be biased
    by the work it inspects? If so, set `agent: fresh` on it so the engine runs it
    in a clean-room sub-agent. Default review/audit/QA stages to `agent: fresh`.
+7. Does the loop open with a requirement-gathering interview? If so, offer the
+   **deep interview** (`interview.mode: deep`): it confirms the work's components,
+   tracks convergence to an ambiguity `threshold`, runs contrarian challenges, and
+   can auto-assist. Capture `threshold` (default `0.15`), `challenges` (default
+   `[contrarian@4, simplifier@6, ontologist@8]`), and `auto_assist` (default `true`).
+   A deep interview stays `inline` and `produces` both `spec.md` and `interview-log.md`.
 
 Then write a valid loop YAML (same schema as `loops/spec-harness-tdd.yaml`,
-documented at its top) to `<project>/.odin-loop/loops/<name>.yaml`. Echo the
-file back, and offer to start it with `/odin run <name>`.
+documented at its top) to `<project>/.odin-loop/loops/<name>.yaml`. **Validate the
+written file** (see [Validating a loop](#validating-a-loop)) and fix anything it
+flags. Then echo the file back, and offer to start it with `/odin run <name>`.
 
-Validate before writing: unique stage ids, every `on_fail` points to a real stage id, every gate has a `mode` and a `check`, any `agent` value is either `inline` or `fresh`, any `agent: fresh` stage declares a non-empty `consumes` (its only input channel), and no stage that must talk to the user (e.g. an interview) is `agent: fresh`.
+---
+
+## Validating a loop
+
+Loop structure is checked by code, not by remembering the rules. Run the bundled
+validator on any loop YAML before a NEW run starts and after `/odin new` writes one:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate_loop.py" <path/to/loop.yaml>
+```
+
+It emits a compact JSON report and signals via exit code: `0` valid (warnings may
+remain), `1` blocking error(s) — **do not start the loop; report the `errors` and
+fix them**, `2` usage error (unreadable file), `3` PyYAML not installed — validation
+was skipped, so **fall back to the manual checks below**.
+
+The rules it enforces (the same ones to apply by hand on exit 3): unique stage ids;
+every `on_fail` points to a real stage id; every gate has a `mode`
+(`ai`|`ai+human`|`human`) and a non-empty `check`; any `agent` is `inline` or
+`fresh`; an `agent: fresh` stage declares a non-empty `consumes`. For any stage with
+`interview.mode: deep`: it is not `agent: fresh`, its `produces` includes
+`interview-log.md`, `threshold` (if set) is a number in (0, 1), and every
+`challenges` entry matches `contrarian|simplifier|ontologist@<round>`.
 
 ---
 

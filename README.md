@@ -26,9 +26,12 @@ The names come from the myth, and they map onto the architecture:
 ## Why the default loop is shaped this way
 
 - **Deep interview first** — most AI coding failures are intent failures, not
-  coding failures. The interview probes a fixed set of dimensions and turns a
-  vague request into *testable acceptance criteria* — captured in a structured
-  `spec.md` — before any code is written.
+  coding failures. The interview confirms the work's **components** (topology),
+  probes a fixed set of dimensions, and **self-scores clarity each round** until
+  ambiguity drops below a threshold — injecting contrarian challenges and auto-assist
+  along the way. It turns a vague request into *testable acceptance criteria* —
+  captured in a structured `spec.md`, with the convergence trail in `interview-log.md`
+  — before any code is written. (See [Design → Deep interview](docs/design.md#deep-interview-huginn).)
 - **Harness before implementation** — the criteria become executable tests, so
   "done" has an objective definition.
 - **Verify the harness itself (Gungnir)** — the step most tools skip. A test that
@@ -119,11 +122,15 @@ Built-in loops live in `plugins/odin-loop/loops/`; your custom loops live in
 
 ## Status
 
-`v0.3.0` — added a clean-room **review** stage (a fresh, best-effort sub-agent
-reviews the result against the spec) and a first-class `agent: inline | fresh`
-stage field. Plus v0.2.0: deeper interview stage (8-dimension coverage gate +
-structured `spec.md`); v0.1.1: engine + default loop + custom-loop authoring +
-Muninn (`/odin refine`) session-mining refinement.
+`v0.4.0` — the **deep-interview playbook**: the interview now confirms a
+multi-component **topology**, **self-scores clarity each round** to an ambiguity
+threshold (convergence tracked in `interview-log.md`), injects
+contrarian/simplifier/ontologist **challenges**, and can **auto-assist** — opt in
+per stage with `interview.mode: deep`. Plus a deterministic loop validator
+(`scripts/validate_loop.py`) wired into `/odin run` and `/odin new`. Prior: v0.3.0
+clean-room **review** stage + `agent: inline | fresh`; v0.2.0 deeper interview
+(8-dimension gate + structured `spec.md`); v0.1.1 engine + default loop +
+custom-loop authoring + Muninn (`/odin refine`) session-mining refinement.
 
 ## License
 

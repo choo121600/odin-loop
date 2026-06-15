@@ -60,6 +60,10 @@ plain language:
   stage itself. Set `agent: fresh` to run it in a clean-room sub-agent with no
   prior conversation context — for an independent review or audit that must not be
   biased by the work it inspects (it sees only the stage's `consumes` artifacts).
+- **interview** — *optional*, for a requirement-gathering stage. Set
+  `interview.mode: deep` to run the **deep-interview playbook**: confirm the work's
+  components (topology), self-score clarity each round until ambiguity ≤ a
+  `threshold`, inject contrarian challenges, and auto-assist. See §6½.
 - **max_iterations** — a global safety cap on the number of gate failures
   (loopbacks); happy-path stage runs are not counted. It stops a loop from
   spinning forever; when loopbacks exceed it, the engine stops and reports
@@ -96,6 +100,11 @@ stages:
     consumes: [some-input.md]   # artifacts this stage reads   (hints, optional)
     produces: [some-output.md]  # artifacts this stage writes  (hints, optional)
     agent: inline               # inline (default) | fresh (clean-room sub-agent)
+    interview:                  # optional — opt this stage into the deep-interview
+      mode: deep                #   playbook (topology + convergence + challenges +
+      threshold: 0.15           #   auto-assist). A deep interview also produces
+      challenges: [contrarian@4, simplifier@6, ontologist@8]   # interview-log.md.
+      auto_assist: true
     gate:
       mode: ai           # ai | ai+human | human
       check: the observable condition that must be true to advance
@@ -104,6 +113,8 @@ stages:
 
 `consumes` and `produces` are hints that document the data flow between stages;
 they help the engine (and you) see which artifacts each stage reads and writes.
+The `interview` block is optional and only meaningful on a requirement-gathering
+stage — see §6½.
 
 ---
 
@@ -167,6 +178,9 @@ The engine asks you, a couple of questions at a time:
 5. What's the global `max_iterations` cap?
 6. Does any stage need an independent review — one that shouldn't be biased by the
    work it inspects? If so, it's marked `agent: fresh` (a clean-room sub-agent).
+7. Does the loop open with a requirement-gathering interview? If so, it offers the
+   **deep interview** (`interview.mode: deep`) and captures its `threshold`,
+   `challenges`, and `auto_assist` (see §6½).
 
 It then writes a valid loop YAML to `.odin-loop/loops/<name>.yaml`, echoes it
 back, and offers to start it with `/odin run <name>`.
@@ -262,6 +276,55 @@ Why it's shaped this way:
 
 ---
 
+## 6½. Going deeper: the deep interview (optional)
+
+If your loop opens with a stage that *interviews you* for requirements, you can
+upgrade it from a plain prompt to the **deep-interview playbook** by adding an
+`interview:` block:
+
+```yaml
+- id: interview
+  title: Deep Interview (Huginn)
+  goal: Turn a vague request into testable acceptance criteria
+  interview:
+    mode: deep                 # run the playbook, not just the prompt
+    threshold: 0.15            # stop when self-scored ambiguity ≤ this (0..1)
+    challenges: [contrarian@4, simplifier@6, ontologist@8]   # contrarian probes
+    auto_assist: true          # read-only candidate-answer / opt-out sub-agents
+  prompt: |
+    (domain framing only — which dimensions to probe; the playbook owns procedure)
+  produces: [spec.md, interview-log.md]
+  gate:
+    mode: ai+human
+    check: >
+      interview-log.md shows ambiguity ≤ threshold; every topology component is
+      covered in spec.md by a testable criterion; no unresolved blocking question.
+```
+
+What each knob does:
+
+- **`mode: deep`** — the only required field. It tells the engine to run the
+  playbook (`skills/loop-engine/deep-interview.md`) instead of just following the
+  prompt: enumerate the work as **1–6 components** (topology) and confirm them, then
+  loop one question at a time, **self-scoring clarity** every round.
+- **`threshold`** — the gate. Each round the engine records
+  `ambiguity = 1 − Σ(clarity × weight)` into `interview-log.md`; the stage advances
+  only once ambiguity ≤ `threshold`. Lower is stricter (`0.15` is a good default;
+  `0.30` for a quick pass). These scores are an honest **self-assessment**, not a
+  computed metric — Odin-Loop has no code runtime — so the value is the written,
+  inspectable trail, not false precision.
+- **`challenges`** — at the listed rounds, inject a fixed-angle probe:
+  `contrarian` ("what if the opposite were true?"), `simplifier` ("what's the
+  simplest valuable version?"), `ontologist` ("what IS this, really?").
+- **`auto_assist`** — let read-only sub-agents propose ranked candidate answers
+  (greenfield questions) or resolve a question you opt out of. They never decide.
+
+A deep interview always stays `inline` (it must talk to you) and **produces
+`interview-log.md`** alongside `spec.md`. Write the gate `check` against the
+ledger, as above.
+
+---
+
 ## 7. Validate, run, and where to go next
 
 Before running, check your YAML against the rules the engine validates:
@@ -272,6 +335,21 @@ Before running, check your YAML against the rules the engine validates:
 - Any **`agent` value is either `inline` or `fresh`**; an `agent: fresh` stage
   **declares a non-empty `consumes`** (its only input channel), and a stage that
   talks to the user is never `fresh`.
+- Any **`interview.mode: deep`** stage is not `agent: fresh`, lists
+  `interview-log.md` in `produces`, has a `threshold` in (0, 1), and every
+  `challenges` entry is `contrarian|simplifier|ontologist@<round>`.
+
+You don't have to check these by hand — the bundled validator does it
+deterministically:
+
+```
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate_loop.py" .odin-loop/loops/<name>.yaml
+```
+
+It prints any blocking errors to fix (exit `1`) or confirms the loop is valid
+(exit `0`). `/odin new` and `/odin run` run it for you before starting. (It needs
+PyYAML; if that isn't installed it exits `3` and you fall back to the checklist
+above.)
 
 Then confirm the engine can see it and start it:
 
