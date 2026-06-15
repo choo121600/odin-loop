@@ -43,7 +43,7 @@ def analyze_runs(runs_dir):
     out = {
         "total_runs": 0, "completed": 0, "failed": 0, "abandoned": 0,
         "loops_used": Counter(),
-        "stage_loopbacks": Counter(),     # times each stage was re-run (iterations-1)
+        "stage_loopbacks": Counter(),     # loopbacks per stage (iterations[stage] is already the loopback count)
         "gate_failures_by_stage": Counter(),
         "human_gate_count": 0, "ai_gate_count": 0,
     }
@@ -65,8 +65,8 @@ def analyze_runs(runs_dir):
         if st.get("loop"):
             out["loops_used"][st["loop"]] += 1
         for stage, n in (st.get("iterations") or {}).items():
-            if n and n > 1:
-                out["stage_loopbacks"][stage] += (n - 1)
+            if n:
+                out["stage_loopbacks"][stage] += n
         for h in (st.get("history") or []):
             if h.get("result") == "fail":
                 out["gate_failures_by_stage"][h.get("stage", "?")] += 1
