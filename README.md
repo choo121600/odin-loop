@@ -10,8 +10,8 @@ executes. It ships with a strong default loop, and lets you build and refine you
 own with `/odin new`.
 
 ```
-deep interview → harness design → harness verify → implement → test → clean review
-   (Huginn)                          (Gungnir)                          (fresh agent)
+deep interview → plan → harness design → harness verify → implement → test → clean review
+   (Huginn)                                (Gungnir)                          (fresh agent)
 ```
 
 The names come from the myth, and they map onto the architecture:

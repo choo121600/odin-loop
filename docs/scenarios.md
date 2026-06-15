@@ -15,9 +15,12 @@ You want to build something but the requirements are still fuzzy.
   → interview: a few focused questions; spec.md fills with testable criteria
   → ⏸ ai+human gate: review the spec, then /odin run to approve
 /odin run
+  → plan: spec.md → plan.md — build units, file targets, build order (inline)
+  → ⏸ ai+human gate: review the plan, then /odin run to approve
+/odin run
   → harness-design: each criterion becomes a test (red, no implementation yet)
   → harness-verify (Gungnir): a known-bad stub must fail ≥1 test (ai, auto)
-  → implement: build against the harness · test: run it
+  → implement: build against the harness, following the plan order · test: run it
   → a test fails → loops back to implement (bounded by max_iterations)
   → review (fresh agent, no prior context): checks src/ against spec.md
   → a blocking issue (spec/edge-case/security) → back to implement (fix adds a regression test); none → ⏸ ai+human sign-off → done

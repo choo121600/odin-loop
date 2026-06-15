@@ -33,9 +33,9 @@ with your changes and re-gates. Loopbacks are bounded by `max_iterations`.
 The shipped loop encodes a spec-driven, test-first discipline:
 
 ```
-interview → harness-design → harness-verify → implement → test → review
- (Huginn)                      (Gungnir)           ↑__________|_______|
-                                                         (fresh agent)
+interview → plan → harness-design → harness-verify → implement → test → review
+ (Huginn)                             (Gungnir)            ↑__________|______|
+                                                                (fresh agent)
 ```
 
 1. **interview** — turn a vague request into a structured `spec.md`. It runs the
@@ -47,12 +47,19 @@ interview → harness-design → harness-verify → implement → test → revie
    opt-outs (never deciding for you). The gate reads the convergence ledger — every
    component covered by a testable criterion, ambiguity ≤ threshold (`ai+human`).
    See [Design → Deep interview](design.md#deep-interview-huginn).
-2. **harness-design** — translate each criterion into an executable test (`ai`).
-3. **harness-verify** — prove the harness has teeth: a deliberately-wrong stub must
+2. **plan** — turn the spec (the *what*) into an ordered implementation plan (the
+   *how*): decompose the confirmed topology into build units, name the file/module
+   targets, map each unit to the criteria it closes, and sequence them with no unmet
+   dependency. Runs `inline` — planning wants the interview's context, not fresh eyes.
+   The gate checks that every criterion maps to a build unit and the order is
+   actionable, then pauses for your sign-off (`ai+human`).
+3. **harness-design** — translate each criterion into an executable test (`ai`).
+4. **harness-verify** — prove the harness has teeth: a deliberately-wrong stub must
    make at least one test fail (`ai`).
-4. **implement** — build against the verified harness, without weakening tests (`ai`).
-5. **test** — run the harness; loop back to `implement` on failure (`ai`).
-6. **review** — a *fresh* sub-agent (no prior context, `agent: fresh`) reviews the
+5. **implement** — build against the verified harness, following the plan's build
+   order, without weakening tests (`ai`).
+6. **test** — run the harness; loop back to `implement` on failure (`ai`).
+7. **review** — a *fresh* sub-agent (no prior context, `agent: fresh`) reviews the
    implementation against `spec.md` for what the harness can't catch (missed edge
    cases, scope creep). "Blocking" is defined objectively (a spec criterion/edge-case
    violation, or a security/data-loss defect); a blocking finding loops back to

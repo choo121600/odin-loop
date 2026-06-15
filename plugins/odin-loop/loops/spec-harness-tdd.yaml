@@ -42,8 +42,8 @@
 # =============================================================================
 
 name: spec-harness-tdd
-version: 4
-description: Clarify requirements -> design harness -> verify harness -> implement -> test -> clean review
+version: 5
+description: Clarify requirements -> plan implementation -> design harness -> verify harness -> implement -> test -> clean review
 max_iterations: 15
 
 stages:
@@ -110,6 +110,44 @@ stages:
         accepted as a non-blocking risk (no unresolved blocking risk).
 
   # ---------------------------------------------------------------------------
+  - id: plan
+    title: Implementation Planning
+    goal: Turn the spec (WHAT) into an ordered implementation plan (HOW) — decompose the topology into build units, sequence them, name file/module targets, flag risks
+    agent: inline
+    prompt: |
+      Turn spec.md into an actionable build plan. This is the HOW, not the WHAT:
+      do NOT re-derive or restate the acceptance criteria — that is spec.md's job,
+      and duplicating them here just rots. Reference them by number instead.
+
+      Stay inline (you are not a fresh agent): planning wants the interview's
+      context and the topology you just confirmed, unlike the clean review which
+      wants fresh eyes. Continue that thread.
+
+      Decompose the confirmed Topology into build units. For each unit state:
+      - the files / modules it will touch (the real project tree, not harness/)
+      - which acceptance criteria it closes (by number)
+      - what other units it depends on (so the order is explicit)
+      Then give ONE ordered build sequence with no unmet dependency, and a short
+      Risks / Unknowns list. If planning exposes a gap or ambiguity in spec.md,
+      do not paper over it — record it under Risks / Unknowns and surface it at
+      the gate so it can be sent back to the interview.
+
+      plan.md structure (fixed)
+        # <task> — Implementation Plan
+        ## Build Units        # each: files touched, criteria closed (by #), depends-on
+        ## Build Order        # the units in dependency order, with rationale
+        ## Risks / Unknowns   # write "none" if empty
+    consumes: [spec.md]
+    produces: [plan.md]
+    gate:
+      mode: ai+human
+      check: >
+        plan.md maps every acceptance criterion in spec.md to at least one build
+        unit; the build order has no unmet dependency (nothing depends on a unit
+        that comes later); and every build unit is actionable — it names concrete
+        file/module targets, not a vague intention.
+
+  # ---------------------------------------------------------------------------
   - id: harness-design
     title: Harness Design
     goal: Translate each acceptance criterion in the spec into an executable test harness
@@ -118,7 +156,9 @@ stages:
       - There is no implementation (src) yet, so tests are expected to fail.
       - Tests must verify "observable behavior", not implementation details.
       - Keep the criteria <-> test mapping explicit.
-    consumes: [spec.md]
+      - Use plan.md's build units to organize the harness, but the tests still
+        derive from spec.md's criteria — the plan sets order, not what to verify.
+    consumes: [spec.md, plan.md]
     produces: [harness/]
     gate:
       mode: ai
@@ -156,7 +196,8 @@ stages:
       - Do not add features that aren't in the spec (prevent scope creep).
       - If you arrived here from a review finding, first add a regression test to
         harness/ that captures it, then make it pass.
-    consumes: [spec.md, harness/]
+      - Follow plan.md's build order; deviate only with a stated reason.
+    consumes: [spec.md, plan.md, harness/]
     produces: [src/]
     gate:
       mode: ai
