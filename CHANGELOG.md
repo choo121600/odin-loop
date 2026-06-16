@@ -25,6 +25,10 @@ _Add new entries here as you merge changes, grouped under `Added` / `Changed` /
   `/odin schedule register … --notify`. OS-native (macOS `osascript` / Linux
   `notify-send`, no extra dependency); a notify failure is logged and never changes the
   run's outcome or exit status.
+- **Schedule status in `list`.** `/odin schedule list` now shows each schedule's runtime
+  health — last fire time + outcome (or `never`), a recent-failure count, and the next
+  fire time computed from the cron — alongside its install status. Read-only; log parsing
+  and the next-fire computation are best-effort.
 
 ## [0.6.1] — 2026-06-16
 

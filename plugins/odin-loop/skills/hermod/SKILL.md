@@ -99,8 +99,11 @@ under a full PATH, guarded by a lock and logged to `<loop>.log`. Report where it
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/hermod.py" list --project-dir "<root>"
 ```
-Print each schedule: loop, cron, platform, install status, and the **acknowledged
-outward actions** (so the blast radius stays visible).
+Print each schedule: loop, cron, platform, install status, the **acknowledged outward
+actions** (so the blast radius stays visible), and its **runtime health** — `last_fire`
+(time + outcome, or `never`), `recent_failures`, and `next_fire` (next run time from the
+cron). The `last_fire`/`recent_failures` come from `<loop>.log`; all are best-effort
+(a missing log just shows `never`).
 
 ## `/odin schedule remove <loop>` / `uninstall <loop>`
 

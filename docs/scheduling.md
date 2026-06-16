@@ -126,7 +126,9 @@ build loop *ships*). Hermóðr closes that gap with three layers:
 
 ## Managing schedules
 
-List every schedule with its cron, install status, and acknowledged outward actions:
+List every schedule with its cron, install status, acknowledged outward actions, and its
+**runtime health** — the last fire's time + outcome (or `never`), a recent-failure count,
+and the next scheduled fire time (computed from the cron):
 
 ```
 /odin schedule list
