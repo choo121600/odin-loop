@@ -11,6 +11,15 @@ _Add new entries here as you merge changes, grouped under `Added` / `Changed` /
 `Fixed` / `Removed`. On release, rename this heading to the new version
 (e.g. `## [0.7.0] — YYYY-MM-DD`), tag it, and start a fresh `Unreleased` section._
 
+### Added
+- **Scheduling (Hermóðr).** Register a fully-autonomous loop (every gate `ai`, no
+  human gate) to run unattended on the OS scheduler (macOS launchd / crontab) via
+  `/odin schedule register|install|list|remove|uninstall`. Schedulability is enforced
+  at register **and** on every fire (`validate_loop.py --schedulable`); the unattended
+  run is contained by a conservative scoped settings profile (never
+  `--dangerously-skip-permissions`), an explicit outward-action acknowledgment, an
+  overlap lock, and a run log. Docs: [`docs/scheduling.md`](docs/scheduling.md) (#30).
+
 ## [0.6.1] — 2026-06-16
 
 A documentation-and-consistency patch: no behavior changes to how you author or

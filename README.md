@@ -104,6 +104,7 @@ actually work.
 - [Features](docs/features.md) — every command, the default loop, Muninn
 - [Scenarios](docs/scenarios.md) — end-to-end walkthroughs
 - [Authoring custom loops](docs/authoring-loops.md) — write your own loop as YAML
+- [Scheduling loops](docs/scheduling.md) — run autonomous loops unattended on a schedule (Hermóðr)
 
 ## Loops are data
 

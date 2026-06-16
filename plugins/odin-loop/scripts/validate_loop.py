@@ -20,7 +20,11 @@ Usage:
 
 stdlib only, except PyYAML (degrades gracefully when absent).
 """
-import argparse, json, os, re, sys
+import argparse
+import json
+import os
+import re
+import sys
 
 try:
     import yaml  # PyYAML — not stdlib; absence is handled (exit 3)
@@ -188,9 +192,43 @@ def validate_loop(path, doc):
     return errors, warnings
 
 
+def schedulable_violations(doc):
+    """Reasons a loop may NOT be scheduled to run unattended (Hermóðr), or [] if it
+    is fully autonomous. A loop is schedulable iff EVERY gate is `ai` (no `ai+human`
+    or `human`) and no stage runs a `deep` interview — i.e. it never pauses for a
+    human. This preserves "humans hold the wheel at ai+human gates" by construction:
+    only loops with no human gate can fire on a schedule. (Necessary, not sufficient,
+    for safety — outward-action acknowledgment + a scoped settings profile handle the
+    blast radius; see the hermod skill.)"""
+    if not isinstance(doc, dict):
+        return ["loop is not a mapping"]
+    stages = doc.get("stages")
+    if not isinstance(stages, list):
+        return ["loop has no `stages` list"]
+    out = []
+    for st in stages:
+        if not isinstance(st, dict):
+            continue
+        sid = st.get("id", "?")
+        gate = st.get("gate")
+        if isinstance(gate, dict) and gate.get("mode") in ("ai+human", "human"):
+            out.append(f"stage `{sid}`: gate.mode `{gate.get('mode')}` needs a human "
+                       "— an unattended run would block or silently auto-approve it")
+        iv = st.get("interview")
+        if isinstance(iv, dict) and iv:
+            kind = ("interview.mode `deep`" if iv.get("mode") == "deep"
+                    else "an `interview` stage")
+            out.append("stage `%s`: %s interviews the user (ask/wait) — it cannot "
+                       "run unattended" % (sid, kind))
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description="Validate Odin-Loop loop YAML files.")
     ap.add_argument("paths", nargs="+", help="loop YAML file(s) to validate")
+    ap.add_argument("--schedulable", action="store_true",
+                    help="also require the loop be fully autonomous (no human gate / "
+                         "deep interview), i.e. safe for Hermóðr to schedule unattended")
     args = ap.parse_args()
 
     if yaml is None:
@@ -218,6 +256,9 @@ def main():
             all_ok = False
             continue
         errors, warnings = validate_loop(path, doc)
+        if args.schedulable:
+            errors = errors + [f"not schedulable: {m}"
+                               for m in schedulable_violations(doc)]
         ok = not errors
         all_ok = all_ok and ok
         results.append({
