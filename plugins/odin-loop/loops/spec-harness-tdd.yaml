@@ -67,7 +67,7 @@ stages:
       Interview the user deeply. Most failures come from "intent", not coding,
       so the goal of this stage is an agreed-upon spec.md, not code.
 
-      This stage runs the DEEP-INTERVIEW PLAYBOOK (deep-interview.md): confirm the
+      This stage runs the DEEP-INTERVIEW PLAYBOOK (skills/loop-engine/deep-interview.md): confirm the
       work's topology (1-6 components) in Round 0, then score clarity each round
       and record convergence into interview-log.md until ambiguity <= threshold.
       The playbook owns that procedure (one question at a time, the auto-assist
