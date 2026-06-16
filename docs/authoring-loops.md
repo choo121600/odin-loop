@@ -1,5 +1,7 @@
 # Authoring Custom Loops
 
+**English** | [한국어](authoring-loops.ko.md)
+
 Odin-Loop ships with a built-in loop (`spec-harness-tdd`), but its real power is
 that **a loop is just data** — a YAML file you can write yourself. This guide
 takes you from "I've never thought about loops" to a custom loop you can start
