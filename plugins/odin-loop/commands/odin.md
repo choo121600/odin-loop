@@ -1,6 +1,6 @@
 ---
-description: Run, step, inspect, list, author, or refine Odin-Loop workflow loops
-argument-hint: "run | step <stage> | status | list | new | refine [loop]"
+description: Run, step, inspect, list, author, schedule, or refine Odin-Loop workflow loops
+argument-hint: "run | step <stage> | status | list | new | schedule <…> | refine [loop]"
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "Task", "Skill"]
 ---
 
@@ -16,6 +16,9 @@ Dispatch on the first argument:
 - `status` — show the active run's state. → **`loop-engine`**.
 - `list` — list available loop definitions. → **`loop-engine`**.
 - `new` — author a new custom loop by interviewing the user. → **`loop-engine`**.
+- `schedule <register|list|remove|install|uninstall> [loop]` — schedule a
+  **fully-autonomous** loop (no human gate) to run unattended on the OS scheduler
+  (launchd/cron), or list/remove/install/uninstall one. → use the **`hermod`** skill.
 - `refine [loop]` — analyze past runs + sessions and propose loop edits. → use
   the **`muninn`** skill.
 - `refine apply` — apply the most recent refinement proposal. → **`muninn`**.
