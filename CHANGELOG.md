@@ -11,6 +11,32 @@ _Add new entries here as you merge changes, grouped under `Added` / `Changed` /
 `Fixed` / `Removed`. On release, rename this heading to the new version
 (e.g. `## [0.7.0] — YYYY-MM-DD`), tag it, and start a fresh `Unreleased` section._
 
+## [0.6.1] — 2026-06-16
+
+A documentation-and-consistency patch: no behavior changes to how you author or
+run loops, plus muninn / validator fixes that landed since 0.6.0.
+
+### Added
+- `CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
+  + Semantic Versioning, extracted from the README Status section (#26).
+
+### Fixed
+- **muninn** counts stage loopbacks directly instead of `iterations − 1` (#5).
+- **muninn** uses a canonical history-gate vocabulary and no longer double-counts
+  `ai+human` gates (#13).
+- **validate_loop** requires a deep-interview stage's `produces` to be a list (#12).
+- `marketplace.json`'s pipeline description now matches the real stage names in
+  `plugin.json` and the loop YAML — `harness-design → harness-verify` (#10).
+- `spec-harness-tdd.yaml` references the deep-interview playbook by its full
+  `skills/loop-engine/deep-interview.md` path instead of a bare filename (#14).
+- `state.json` `interview`-object field contract reconciled across `SKILL.md` and
+  `deep-interview.md`: the written set is `{ threshold, rounds, ambiguity,
+  topology }` (what `/odin status` reads); per-component clarity stays in
+  `interview-log.md` (#15).
+- Korean authoring-loops guide is reachable and self-consistent — added the EN/KO
+  language switcher, pointed its cross-references at the `.ko.md` siblings, and
+  linked the guide from both Documentation indexes (#7, #8, #9).
+
 ## [0.6.0] — 2026-06-15
 
 ### Added
@@ -56,7 +82,8 @@ _Add new entries here as you merge changes, grouped under `Added` / `Changed` /
 - Initial release: the loop engine, the default loop, custom-loop authoring, and
   Muninn (`/odin refine`) session-mining refinement.
 
-[Unreleased]: https://github.com/choo121600/odin-loop/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/choo121600/odin-loop/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/choo121600/odin-loop/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/choo121600/odin-loop/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/choo121600/odin-loop/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/choo121600/odin-loop/compare/v0.3.0...v0.4.0
