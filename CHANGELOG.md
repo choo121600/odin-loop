@@ -5,6 +5,12 @@ All notable changes to Odin-Loop are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+_Add new entries here as you merge changes, grouped under `Added` / `Changed` /
+`Fixed` / `Removed`. On release, rename this heading to the new version
+(e.g. `## [0.7.0] — YYYY-MM-DD`), tag it, and start a fresh `Unreleased` section._
+
 ## [0.6.0] — 2026-06-15
 
 ### Added
@@ -50,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release: the loop engine, the default loop, custom-loop authoring, and
   Muninn (`/odin refine`) session-mining refinement.
 
+[Unreleased]: https://github.com/choo121600/odin-loop/compare/v0.6.0...HEAD
 [0.6.0]: https://github.com/choo121600/odin-loop/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/choo121600/odin-loop/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/choo121600/odin-loop/compare/v0.3.0...v0.4.0
