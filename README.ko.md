@@ -137,15 +137,8 @@ stages:
 
 ## 상태
 
-`v0.6.0` — **명명된 스테이지 역할**: 스테이지의 `agent`를 이제 다섯 가지 재사용 페르소나
-— `explore` / `planner` / `executor` / `critic` / `reviewer`(`plugins/odin-loop/agents/`에
-수록) — 중 하나로 지정할 수 있고, 각자 기본 클린룸/inline 컨텍스트를 가지며
-`agent: { role, fresh }`로 덮어쓸 수 있습니다. 기본 루프도 스테이지들을 이 역할로 실행합니다.
-이전: v0.5.0 구현 **계획** 스테이지; v0.4.0 **딥 인터뷰 플레이북**(멀티 컴포넌트 토폴로지,
-매 라운드 명확도 자가 채점→ambiguity 임계값 수렴, contrarian/simplifier/ontologist 챌린지,
-자동 보조) + 결정론적 루프 검증기(`scripts/validate_loop.py`); v0.3.0 클린룸 **review**
-스테이지 + `agent: inline | fresh`; v0.2.0 인터뷰 심화(8개 차원 게이트 + 구조화된 `spec.md`);
-v0.1.1 엔진 + 기본 루프 + 커스텀 루프 작성 + 무닌(`/odin refine`) 세션 마이닝 교정.
+`v0.6.0` — 활발히 개발 중이며, 기본 루프가 처음부터 끝까지 동작합니다. 전체 버전
+이력은 [CHANGELOG.md](CHANGELOG.md)를 참고하세요.
 
 ## 라이선스
 

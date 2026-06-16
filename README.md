@@ -138,17 +138,8 @@ The role shapes *how* a worker behaves; the stage's gate and artifacts stay in t
 
 ## Status
 
-`v0.6.0` — **named stage roles**: a stage's `agent` can now be one of five reusable
-personas — `explore` / `planner` / `executor` / `critic` / `reviewer` (shipped in
-`plugins/odin-loop/agents/`) — each with a default clean-room/inline context you can
-override via `agent: { role, fresh }`; the default loop runs its stages as these
-roles. Prior: v0.5.0 implementation-**plan** stage; v0.4.0 **deep-interview
-playbook** (multi-component topology, per-round clarity self-scoring to an ambiguity
-threshold, contrarian/simplifier/ontologist challenges, auto-assist) + deterministic
-loop validator (`scripts/validate_loop.py`); v0.3.0 clean-room **review** stage +
-`agent: inline | fresh`; v0.2.0 deeper interview (8-dimension gate + structured
-`spec.md`); v0.1.1 engine + default loop + custom-loop authoring + Muninn
-(`/odin refine`) session-mining refinement.
+`v0.6.0` — actively developed; the default loop runs end-to-end. See
+[CHANGELOG.md](CHANGELOG.md) for the full version history.
 
 ## License
 
