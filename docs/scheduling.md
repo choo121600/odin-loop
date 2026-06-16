@@ -146,6 +146,25 @@ schedule without forgetting it:
 /odin schedule uninstall daily-issue-plan
 ```
 
+## Notifications
+
+A scheduled run only writes its outcome to the log; turn on a desktop **notification**
+so a failure is noticed without reading it. Set the policy at `register`:
+
+```
+/odin schedule register daily-issue-plan "0 9 * * *" --notify on-failure
+```
+
+- `on-failure` (default) — notify only on a real problem (an `error`, or a `refused`
+  fire-time re-check); stays quiet on success and on a benign lock skip.
+- `always` — notify on every run, including success.
+- `off` — never notify.
+
+The notification is **best-effort**: it uses an OS-native mechanism (macOS `osascript`,
+Linux `notify-send` — no extra install) and may not display if there is no active GUI
+session, so the **run log remains the source of truth**. A notification failure is
+logged and never changes the run's outcome.
+
 ## launchd vs crontab
 
 `install` picks the backend from your OS, or you can force it. On **macOS** it writes a
@@ -186,7 +205,7 @@ Everything a schedule needs lives under the gitignored `.odin-loop/schedules/`:
 
 | File | Role |
 | --- | --- |
-| `<loop>.yaml` | the schedule: `loop`, `cron`, `settings_profile`, `platform`, `project_dir`, `log`, `created_at`, `enabled`, `outward_actions` |
+| `<loop>.yaml` | the schedule: `loop`, `cron`, `settings_profile`, `platform`, `project_dir`, `log`, `created_at`, `enabled`, `outward_actions`, `notify` |
 | `<loop>.settings.json` | the scoped permission profile for the unattended run |
 | `<loop>.log` | one line per fire (start, re-check, exit / refusal / skip) |
 | `<loop>.lock` | the overlap guard (PID + run id) |

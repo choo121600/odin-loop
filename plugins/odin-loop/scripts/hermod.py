@@ -156,13 +156,15 @@ def schedule_path(loop_name, schedules_dir):
 
 
 def register(loop_name, loop_doc, cron, ack, project_dir, schedules_dir,
-             platform="auto", now=None):
+             platform="auto", notify="on-failure", now=None):
     """Validate + write a schedule declaration (data only — no OS install).
 
     Raises ValueError, writing NOTHING, on: a non-schedulable loop (has a human gate
     / deep interview), an invalid cron expression, or un-acknowledged outward actions.
     """
     _check_name(loop_name)
+    if notify not in _NOTIFY_VALUES:
+        raise ValueError("invalid notify %r — one of %s" % (notify, _NOTIFY_VALUES))
     violations = validate_loop.schedulable_violations(loop_doc)
     if violations:
         raise ValueError("loop `%s` is not schedulable (it pauses for a human):\n  - %s"
@@ -191,6 +193,7 @@ def register(loop_name, loop_doc, cron, ack, project_dir, schedules_dir,
         "created_at": _now(now),
         "enabled": True,
         "outward_actions": actions,
+        "notify": notify,
     }
     with open(schedule_path(loop_name, schedules_dir), "w", encoding="utf-8") as f:
         yaml.safe_dump(schedule, f, sort_keys=False)
@@ -334,28 +337,88 @@ def _default_spawn(cmd):
     return subprocess.call(cmd)
 
 
-def fire(schedule, loop_doc, lock_path, log_path, spawn=None, now=None):
+# ========================================================= notification =========
+# A scheduled run only logs its outcome; `notify` adds an opt-in desktop heads-up so a
+# failing overnight run is noticed. It is best-effort and NEVER changes the run.
+_NOTIFY_VALUES = ("off", "on-failure", "always")
+
+
+def _should_notify(policy, status):
+    """Whether a terminal `status` should notify under `policy`. `on-failure` = the
+    genuine problems {error, refused}; `skipped-locked` is a benign overlap, not a
+    failure. `off` / anything unknown → never."""
+    if policy == "always":
+        return True
+    if policy == "on-failure":
+        return status in ("error", "refused")
+    return False
+
+
+def _applescript_str(s):
+    return '"' + str(s).replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def _notify_command(loop, status, reason=None):
+    """OS-native notification argv — no third-party dependency. Names the loop, the
+    outcome, and (on error/refusal) a one-line reason."""
+    title = "Odin-Loop · %s" % loop
+    body = "schedule %s: %s" % (loop, status)
+    if reason:
+        body += " — %s" % reason
+    if sys.platform == "darwin":
+        return ["osascript", "-e", "display notification %s with title %s"
+                % (_applescript_str(body), _applescript_str(title))]
+    return ["notify-send", title, body]
+
+
+def notify(schedule, outcome, notifier=None, log_path=None, now=None):
+    """Best-effort, NON-FATAL heads-up on a terminal outcome, per the schedule's
+    `notify` policy (default `on-failure`). A notify failure (missing binary, no GUI
+    session) is caught + logged and never changes the run's outcome or exit status."""
+    policy = (schedule or {}).get("notify", "on-failure")
+    status = (outcome or {}).get("status", "?")
+    if not _should_notify(policy, status):
+        return False
+    loop = (outcome or {}).get("loop") or (schedule or {}).get("loop", "?")
+    reason = outcome.get("error") or ("; ".join(outcome.get("violations", []) or []) or None)
+    notifier = notifier or _default_spawn
+    try:
+        notifier(_notify_command(loop, status, reason))
+        return True
+    except Exception as e:  # best-effort: a notify failure must never break the run
+        if log_path:
+            _log(log_path, "notify failed (best-effort): %s" % e, now)
+        return False
+
+
+def fire(schedule, loop_doc, lock_path, log_path, spawn=None, notifier=None, now=None):
     """The fire-time runner launchd/cron invokes: lock → re-validate schedulability →
-    run claude headless → log. Returns an outcome dict (status: ran | refused |
+    run claude headless → log → notify. Returns an outcome dict (status: ran | refused |
     error | skipped-locked)."""
     spawn = spawn or _default_spawn
     loop = schedule.get("loop", "?")
+
+    def _finish(outcome):
+        # best-effort notify on every terminal outcome; never affects the result
+        notify(schedule, outcome, notifier=notifier, log_path=log_path, now=now)
+        return outcome
+
     if not acquire_lock(lock_path, run_id=loop):
         _log(log_path, "skipped: a previous run of `%s` still holds the lock" % loop, now)
-        return {"status": "skipped-locked", "loop": loop}
+        return _finish({"status": "skipped-locked", "loop": loop})
     try:
         violations = validate_loop.schedulable_violations(loop_doc)
         if violations:
             _log(log_path, "refused: `%s` is no longer schedulable: %s"
                  % (loop, "; ".join(violations)), now)
-            return {"status": "refused", "loop": loop, "violations": violations}
+            return _finish({"status": "refused", "loop": loop, "violations": violations})
         try:
             rc = spawn(claude_command(schedule))
         except FileNotFoundError as e:
             _log(log_path, "error: could not run claude — binary not found (%s)" % e, now)
-            return {"status": "error", "loop": loop, "error": str(e)}
+            return _finish({"status": "error", "loop": loop, "error": str(e)})
         _log(log_path, "ran `%s` (exit %s)" % (loop, rc), now)
-        return {"status": "ran", "loop": loop, "exit": rc}
+        return _finish({"status": "ran", "loop": loop, "exit": rc})
     finally:
         release_lock(lock_path)
 
@@ -450,6 +513,9 @@ def _cli(argv=None):
     reg.add_argument("--project-dir", default=os.getcwd())
     reg.add_argument("--platform", default="auto", choices=["auto", "launchd", "cron"])
     reg.add_argument("--ack", action="store_true", help="acknowledge outward actions")
+    reg.add_argument("--notify", default="on-failure",
+                     choices=["off", "on-failure", "always"],
+                     help="desktop notification policy for the unattended run")
     for name in ("remove", "install", "uninstall", "run"):
         p = sub.add_parser(name)
         p.add_argument("loop")
@@ -474,7 +540,8 @@ def _cli(argv=None):
     if args.cmd == "register":
         try:
             sched = register(args.loop, _load_loop_doc(args.loop, args.project_dir),
-                             args.cron, args.ack, args.project_dir, sd, args.platform)
+                             args.cron, args.ack, args.project_dir, sd, args.platform,
+                             notify=args.notify)
         except (ValueError, FileNotFoundError) as e:
             print(json.dumps({"ok": False, "error": str(e)}))
             return 1
