@@ -143,8 +143,11 @@ and if accepting it would cross the threshold, confirm with the user first.
   snapshot: `stability = (stable + renamed) / total`, where *renamed* = same type
   with >50% field overlap. Round 1 is `n/a` (all new).
 
-**2f. Append a round entry** to `interview-log.md` and persist `state.json`
-(`interview.ambiguity`, `interview.rounds`, per-component clarity).
+**2f. Append a round entry** to `interview-log.md` (including the per-component
+clarity scores) and persist the `interview` object to `state.json` — its four
+contract fields `interview.threshold`, `interview.rounds`, `interview.ambiguity`,
+and `interview.topology`, the set `/odin status` reads. Per-component clarity
+stays in the ledger, not in `state.json`.
 
 **2g. Soft caps.** Round ≥3: you may early-exit the moment the stop condition
 holds. Round 10: warn the user you're 10 rounds in and offer to proceed with
