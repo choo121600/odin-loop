@@ -2,6 +2,9 @@
 
 [English](README.md) | **한국어**
 
+[![v0.6.0 · actively developed](https://img.shields.io/badge/v0.6.0-actively%20developed-brightgreen.svg)](CHANGELOG.md)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 > 나만의 AI 개발 워크플로우 *루프*를 직접 만들고, 실행하고, 다듬는다 — 수정 가능한 데이터로.
 
 대부분의 "AI 개발 워크플로우" 도구는 **고정된 하나의 루프**를 강요합니다. Odin-Loop는

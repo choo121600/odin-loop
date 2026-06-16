@@ -2,6 +2,9 @@
 
 **English** | [한국어](README.ko.md)
 
+[![v0.6.0 · actively developed](https://img.shields.io/badge/v0.6.0-actively%20developed-brightgreen.svg)](CHANGELOG.md)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 > Author, run, and refine your own AI dev workflow *loops* — as editable data.
 
 Most "AI dev workflow" tools hand you **one fixed loop**. Odin-Loop treats the
