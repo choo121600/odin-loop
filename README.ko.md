@@ -100,6 +100,7 @@ deep interview → plan → harness design → harness verify → implement → 
 - [기능](docs/features.ko.md) — 모든 명령, 기본 루프, 무닌
 - [시나리오](docs/scenarios.ko.md) — 엔드투엔드 워크스루
 - [커스텀 루프 작성](docs/authoring-loops.ko.md) — 직접 루프를 YAML로 작성
+- [루프 스케줄링](docs/scheduling.ko.md) — 자율 루프를 스케줄에 맞춰 무인 실행 (Hermóðr)
 
 ## 루프는 데이터다
 
