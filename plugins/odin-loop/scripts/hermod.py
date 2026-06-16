@@ -200,15 +200,113 @@ def register(loop_name, loop_doc, cron, ack, project_dir, schedules_dir,
     return schedule
 
 
-def list_schedules(schedules_dir, agents_dir=None):
+# ===================================================== schedule status ==========
+# Read-only enrichment of `list`: last fire (from the log), recent failures, and next
+# fire (from the cron). All best-effort — a missing/malformed log never raises.
+_OUTCOME_VERBS = {"ran": "ran", "error": "error", "refused": "refused",
+                  "skipped": "skipped-locked"}
+_LOG_LINE_RE = re.compile(r"^\[([^\]]+)\]\s+(\S+)\s*(.*)$")
+
+
+def _parse_outcome_line(line):
+    m = _LOG_LINE_RE.match(line.strip())
+    if not m:
+        return None
+    status = _OUTCOME_VERBS.get(m.group(2).rstrip(":"))
+    if status is None:
+        return None  # e.g. a `notify failed …` line — not a fire outcome
+    return {"at": m.group(1), "status": status, "reason": m.group(3).strip() or None}
+
+
+def _outcome_lines(log_path):
+    try:
+        with open(log_path, encoding="utf-8") as f:
+            text = f.read()
+    except (OSError, UnicodeError):
+        return []
+    return [o for o in (_parse_outcome_line(ln) for ln in text.splitlines()) if o]
+
+
+def last_outcome(log_path):
+    """The last real fire outcome in the log (ignoring `notify failed` lines), or None
+    if the log is missing / empty / unparseable. Best-effort — never raises."""
+    outs = _outcome_lines(log_path)
+    return outs[-1] if outs else None
+
+
+def recent_failures(log_path, n=10):
+    """Count of `error`/`refused` among the last `n` fire outcomes (0 if none / no log)."""
+    return sum(1 for o in _outcome_lines(log_path)[-n:]
+               if o["status"] in ("error", "refused"))
+
+
+def _cron_field_set(field, lo, hi):
+    """Expand one cron field (`*`, `*/n`, `a-b`, `a-b/n`, comma lists) to its values."""
+    vals = set()
+    for part in field.split(","):
+        base, step = part, 1
+        if "/" in part:
+            base, _, step_s = part.partition("/")
+            step = int(step_s)
+        if base == "*":
+            start, end = lo, hi
+        elif "-" in base:
+            a, _, b = base.partition("-")
+            start, end = int(a), int(b)
+        else:
+            start = end = int(base)
+        vals.update(range(start, end + 1, step))
+    return vals
+
+
+def next_fire(cron, after, _cap_days=366):
+    """The next datetime strictly after `after` matching the 5-field cron (system local
+    time), reusing the cron grammar. Bounded search → None if nothing matches in the
+    window. `after` is injected, so the result is deterministic (no wall clock)."""
+    if not valid_cron(cron):
+        return None
+    fmin, fhour, fdom, fmonth, fdow = cron.split()
+    minutes = _cron_field_set(fmin, 0, 59)
+    hours = _cron_field_set(fhour, 0, 23)
+    doms = _cron_field_set(fdom, 1, 31)
+    months = _cron_field_set(fmonth, 1, 12)
+    dows = _cron_field_set(fdow, 0, 7)
+    dom_r, dow_r = fdom != "*", fdow != "*"
+    t = after.replace(second=0, microsecond=0) + _dt.timedelta(minutes=1)
+    limit = after + _dt.timedelta(days=_cap_days)
+    while t <= limit:
+        if t.minute in minutes and t.hour in hours and t.month in months:
+            cron_dow = (t.weekday() + 1) % 7           # cron: Sun=0/7, Mon=1 … Sat=6
+            dow_ok = cron_dow in dows or (7 in dows and cron_dow == 0)
+            # standard cron quirk: when BOTH dom and dow are restricted, match is OR
+            if dom_r and dow_r:
+                day_ok = (t.day in doms) or dow_ok
+            elif dom_r:
+                day_ok = t.day in doms
+            elif dow_r:
+                day_ok = dow_ok
+            else:
+                day_ok = True
+            if day_ok:
+                return t
+        t += _dt.timedelta(minutes=1)
+    return None
+
+
+def list_schedules(schedules_dir, agents_dir=None, now=None):
     if not os.path.isdir(schedules_dir):
         return []
+    now = now or _dt.datetime.now()
     out = []
     for fn in sorted(os.listdir(schedules_dir)):
         if fn.endswith(".yaml"):
             with open(os.path.join(schedules_dir, fn), encoding="utf-8") as f:
                 item = yaml.safe_load(f)
-            item["installed"] = is_installed(item, agents_dir)  # criterion 10
+            item["installed"] = is_installed(item, agents_dir)            # criterion 10
+            log = item.get("log") or _log_path(item)
+            item["last_fire"] = last_outcome(log)                          # criteria 5, 1
+            item["recent_failures"] = recent_failures(log)                 # criterion 2
+            item["next_fire"] = next_fire(item.get("cron", ""), now)       # criterion 3
             out.append(item)
     return out
 
@@ -549,7 +647,7 @@ def _cli(argv=None):
                           "outward_actions": sched["outward_actions"]}, indent=2))
         return 0
     if args.cmd == "list":
-        print(json.dumps({"schedules": list_schedules(sd)}, indent=2))
+        print(json.dumps({"schedules": list_schedules(sd)}, indent=2, default=str))
         return 0
     if args.cmd == "remove":
         remove(args.loop, sd)
