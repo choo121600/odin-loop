@@ -19,6 +19,12 @@ _Add new entries here as you merge changes, grouped under `Added` / `Changed` /
   run is contained by a conservative scoped settings profile (never
   `--dangerously-skip-permissions`), an explicit outward-action acknowledgment, an
   overlap lock, and a run log. Docs: [`docs/scheduling.md`](docs/scheduling.md) (#30).
+- **Scheduled-run notifications.** A scheduled loop emits a best-effort desktop
+  notification on its outcome, controlled by a per-schedule
+  `notify: off | on-failure | always` policy (default `on-failure`) —
+  `/odin schedule register … --notify`. OS-native (macOS `osascript` / Linux
+  `notify-send`, no extra dependency); a notify failure is logged and never changes the
+  run's outcome or exit status.
 
 ## [0.6.1] — 2026-06-16
 
