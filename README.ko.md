@@ -2,7 +2,8 @@
 
 [English](README.md) | **한국어**
 
-[![v0.6.0 · actively developed](https://img.shields.io/badge/v0.6.0-actively%20developed-brightgreen.svg)](CHANGELOG.md)
+[![version](https://img.shields.io/github/v/release/choo121600/odin-loop?label=version&color=brightgreen)](CHANGELOG.md)
+![status: actively developed](https://img.shields.io/badge/status-actively%20developed-brightgreen.svg)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 > 나만의 AI 개발 워크플로우 *루프*를 직접 만들고, 실행하고, 다듬는다 — 수정 가능한 데이터로.

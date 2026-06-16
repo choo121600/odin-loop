@@ -2,7 +2,8 @@
 
 **English** | [한국어](README.ko.md)
 
-[![v0.6.0 · actively developed](https://img.shields.io/badge/v0.6.0-actively%20developed-brightgreen.svg)](CHANGELOG.md)
+[![version](https://img.shields.io/github/v/release/choo121600/odin-loop?label=version&color=brightgreen)](CHANGELOG.md)
+![status: actively developed](https://img.shields.io/badge/status-actively%20developed-brightgreen.svg)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 > Author, run, and refine your own AI dev workflow *loops* — as editable data.
