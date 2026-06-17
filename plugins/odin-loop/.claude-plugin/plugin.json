@@ -1,7 +1,7 @@
 {
   "name": "odin-loop",
-  "version": "0.7.2",
-  "description": "Author, run, and refine custom AI dev workflow loops. Ships a deep-interview → plan → harness-design → harness-verify → implement → test → review loop, and lets you build your own loops as editable data.",
+  "version": "0.7.3",
+  "description": "Author, run, and refine custom AI dev workflow loops. Ships a deep-interview \u2192 plan \u2192 harness-design \u2192 harness-verify \u2192 implement \u2192 test \u2192 review loop, and lets you build your own loops as editable data.",
   "author": {
     "name": "choo121600",
     "email": "choo121600@gmail.com"

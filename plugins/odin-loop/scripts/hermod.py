@@ -205,7 +205,7 @@ def register(loop_name, loop_doc, cron, ack, project_dir, schedules_dir,
 # Read-only enrichment of `list`: last fire (from the log), recent failures, and next
 # fire (from the cron). All best-effort — a missing/malformed log never raises.
 _OUTCOME_VERBS = {"ran": "ran", "error": "error", "refused": "refused",
-                  "skipped": "skipped-locked"}
+                  "failed": "failed", "skipped": "skipped-locked"}
 _LOG_LINE_RE = re.compile(r"^\[([^\]]+)\]\s+(\S+)\s*(.*)$")
 
 
@@ -236,9 +236,9 @@ def last_outcome(log_path):
 
 
 def recent_failures(log_path, n=10):
-    """Count of `error`/`refused` among the last `n` fire outcomes (0 if none / no log)."""
+    """Count of `error`/`refused`/`failed` among the last `n` fire outcomes (0 if none / no log)."""
     return sum(1 for o in _outcome_lines(log_path)[-n:]
-               if o["status"] in ("error", "refused"))
+               if o["status"] in ("error", "refused", "failed"))
 
 
 def _cron_field_set(field, lo, hi):
@@ -456,12 +456,12 @@ _NOTIFY_VALUES = ("off", "on-failure", "always")
 
 def _should_notify(policy, status):
     """Whether a terminal `status` should notify under `policy`. `on-failure` = the
-    genuine problems {error, refused}; `skipped-locked` is a benign overlap, not a
-    failure. `off` / anything unknown → never."""
+    genuine problems {error, refused, failed}; `skipped-locked` is a benign overlap,
+    not a failure. `off` / anything unknown → never."""
     if policy == "always":
         return True
     if policy == "on-failure":
-        return status in ("error", "refused")
+        return status in ("error", "refused", "failed")
     return False
 
 
@@ -491,7 +491,10 @@ def notify(schedule, outcome, notifier=None, log_path=None, now=None):
     if not _should_notify(policy, status):
         return False
     loop = (outcome or {}).get("loop") or (schedule or {}).get("loop", "?")
-    reason = outcome.get("error") or ("; ".join(outcome.get("violations", []) or []) or None)
+    reason = (outcome.get("error")
+              or ("; ".join(outcome.get("violations", []) or []) or None)
+              or ("exit %s" % outcome["exit"] if status == "failed" and "exit" in outcome
+                  else None))
     notifier = notifier or _default_spawn
     try:
         notifier(_notify_command(loop, status, reason))
@@ -504,8 +507,9 @@ def notify(schedule, outcome, notifier=None, log_path=None, now=None):
 
 def fire(schedule, loop_doc, lock_path, log_path, spawn=None, notifier=None, now=None):
     """The fire-time runner launchd/cron invokes: lock → re-validate schedulability →
-    run claude headless → log → notify. Returns an outcome dict (status: ran | refused |
-    error | skipped-locked)."""
+    run claude headless → log → notify. Returns an outcome dict (status: ran | failed |
+    refused | error | skipped-locked). `failed` = claude ran but exited non-zero;
+    `error` = claude could not be launched at all."""
     spawn = spawn or _default_spawn
     loop = schedule.get("loop", "?")
 
@@ -528,6 +532,9 @@ def fire(schedule, loop_doc, lock_path, log_path, spawn=None, notifier=None, now
         except FileNotFoundError as e:
             _log(log_path, "error: could not run claude — binary not found (%s)" % e, now)
             return _finish({"status": "error", "loop": loop, "error": str(e)})
+        if rc != 0:
+            _log(log_path, "failed `%s` (exit %s)" % (loop, rc), now)
+            return _finish({"status": "failed", "loop": loop, "exit": rc})
         _log(log_path, "ran `%s` (exit %s)" % (loop, rc), now)
         return _finish({"status": "ran", "loop": loop, "exit": rc})
     finally:
