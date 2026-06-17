@@ -25,6 +25,7 @@ import datetime as _dt
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -330,8 +331,20 @@ def _scripts_dir():
     return os.path.dirname(os.path.abspath(__file__))
 
 
-# A full PATH so launchd/cron's minimal environment can resolve claude / gh / git.
-_FULL_PATH = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+# A broad PATH so launchd/cron's minimal environment can resolve claude / gh / git —
+# including the user bin dirs (e.g. ~/.local/bin) where `claude` is commonly installed.
+_FULL_PATH = ":".join([
+    os.path.expanduser("~/.local/bin"), os.path.expanduser("~/bin"),
+    "/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin",
+])
+
+
+def _resolve_claude(path=None):
+    """Absolute path to the `claude` binary (searched on the broad PATH above, incl.
+    ~/.local/bin), or bare `claude` as a fallback. Resolving here means a scheduled run
+    finds claude even under launchd/cron's minimal environment — the gap an end-to-end
+    fire surfaced (claude lived in ~/.local/bin, which the trigger PATH had omitted)."""
+    return shutil.which("claude", path=path or _FULL_PATH) or "claude"
 
 
 def _log_path(schedule):
@@ -343,7 +356,7 @@ def claude_command(schedule):
     """argv for the unattended headless run — scoped by a settings profile, NEVER a
     permission bypass."""
     _check_name(schedule["loop"])
-    return ["claude", "-p", "/odin run %s" % schedule["loop"],
+    return [_resolve_claude(), "-p", "/odin run %s" % schedule["loop"],
             "--settings", schedule["settings_profile"]]
 
 

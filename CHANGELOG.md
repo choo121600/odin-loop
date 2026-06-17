@@ -11,6 +11,14 @@ _Add new entries here as you merge changes, grouped under `Added` / `Changed` /
 `Fixed` / `Removed`. On release, rename this heading to the new version
 (e.g. `## [0.7.0] — YYYY-MM-DD`), tag it, and start a fresh `Unreleased` section._
 
+## [0.7.1] — 2026-06-17
+
+### Fixed
+- **Scheduled runs now find `claude`.** The launchd plist / crontab trigger ran with a
+  PATH that omitted `~/.local/bin` (a common `claude` install location), so a real
+  scheduled fire failed `claude not found`. The runner now resolves claude's absolute
+  path, and the trigger PATH includes the user bin dirs (`~/.local/bin`, `~/bin`).
+
 ## [0.7.0] — 2026-06-17
 
 The **scheduler** release (Hermóðr): run a fully-autonomous loop unattended on the OS
@@ -107,7 +115,8 @@ run loops, plus muninn / validator fixes that landed since 0.6.0.
 - Initial release: the loop engine, the default loop, custom-loop authoring, and
   Muninn (`/odin refine`) session-mining refinement.
 
-[Unreleased]: https://github.com/choo121600/odin-loop/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/choo121600/odin-loop/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/choo121600/odin-loop/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/choo121600/odin-loop/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/choo121600/odin-loop/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/choo121600/odin-loop/compare/v0.5.0...v0.6.0
