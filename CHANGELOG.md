@@ -11,6 +11,20 @@ _Add new entries here as you merge changes, grouped under `Added` / `Changed` /
 `Fixed` / `Removed`. On release, rename this heading to the new version
 (e.g. `## [0.7.0] — YYYY-MM-DD`), tag it, and start a fresh `Unreleased` section._
 
+## [0.7.3] — 2026-06-17
+
+### Fixed
+- **A scheduled run that fails is now reported as a failure.** The fire-time
+  runner recorded any run whose `claude -p` returned as `status: "ran"` regardless
+  of its exit code, so a non-zero exit (e.g. hitting a Claude usage limit mid-run)
+  was logged as a success — it did not count toward `recent_failures`, and a
+  `notify: on-failure` policy stayed silent, so `schedule list` health looked
+  falsely green. A non-zero exit is now a distinct **`failed`** outcome (vs
+  `error` = claude could not be launched at all): it is counted in
+  `recent_failures`, surfaced by `on-failure` / `always` notifications (with the
+  exit code in the body), and returns a non-zero CLI exit. Surfaced by a real
+  18:00 scheduled fire that hit a usage limit and was mis-reported as `ran`.
+
 ## [0.7.2] — 2026-06-17
 
 ### Fixed
@@ -130,7 +144,8 @@ run loops, plus muninn / validator fixes that landed since 0.6.0.
 - Initial release: the loop engine, the default loop, custom-loop authoring, and
   Muninn (`/odin-loop:odin refine`) session-mining refinement.
 
-[Unreleased]: https://github.com/choo121600/odin-loop/compare/v0.7.2...HEAD
+[Unreleased]: https://github.com/choo121600/odin-loop/compare/v0.7.3...HEAD
+[0.7.3]: https://github.com/choo121600/odin-loop/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/choo121600/odin-loop/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/choo121600/odin-loop/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/choo121600/odin-loop/compare/v0.6.1...v0.7.0

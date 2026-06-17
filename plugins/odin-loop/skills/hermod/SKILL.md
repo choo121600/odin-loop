@@ -68,8 +68,9 @@ write** — in this order:
      [--notify off|on-failure|always]
    ```
    `--notify` (default `on-failure`) sets the desktop-notification policy for the
-   unattended run — `on-failure` notifies on `error`/`refused`, `always` on every fire,
-   `off` never. Best-effort (osascript / notify-send); a notify failure never breaks the run.
+   unattended run — `on-failure` notifies on `error`/`refused`/`failed` (a non-zero
+   claude exit), `always` on every fire, `off` never. Best-effort (osascript /
+   notify-send); a notify failure never breaks the run.
    The script re-detects the actions and **refuses without `--ack`**. Present them —
    e.g. *"이 루프는 무인으로 `git push` · `gh pr create` · `gh pr merge` 를 수행합니다.
    허용하시겠어요?"* — and only on a clear yes, re-run with `--ack`.
