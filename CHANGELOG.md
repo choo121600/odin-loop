@@ -11,6 +11,12 @@ _Add new entries here as you merge changes, grouped under `Added` / `Changed` /
 `Fixed` / `Removed`. On release, rename this heading to the new version
 (e.g. `## [0.7.0] — YYYY-MM-DD`), tag it, and start a fresh `Unreleased` section._
 
+## [0.7.0] — 2026-06-17
+
+The **scheduler** release (Hermóðr): run a fully-autonomous loop unattended on the OS
+scheduler (launchd / crontab), with outcome notifications and at-a-glance runtime status
+in `list`.
+
 ### Added
 - **Scheduling (Hermóðr).** Register a fully-autonomous loop (every gate `ai`, no
   human gate) to run unattended on the OS scheduler (macOS launchd / crontab) via
@@ -101,7 +107,8 @@ run loops, plus muninn / validator fixes that landed since 0.6.0.
 - Initial release: the loop engine, the default loop, custom-loop authoring, and
   Muninn (`/odin refine`) session-mining refinement.
 
-[Unreleased]: https://github.com/choo121600/odin-loop/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/choo121600/odin-loop/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/choo121600/odin-loop/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/choo121600/odin-loop/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/choo121600/odin-loop/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/choo121600/odin-loop/compare/v0.4.0...v0.5.0
