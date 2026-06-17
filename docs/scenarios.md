@@ -10,14 +10,14 @@ output.
 You want to build something but the requirements are still fuzzy.
 
 ```
-/odin run
+/odin-loop:odin run
   → no active run → engine asks which loop (default: spec-harness-tdd)
   → interview: a few focused questions; spec.md fills with testable criteria
-  → ⏸ ai+human gate: review the spec, then /odin run to approve
-/odin run
+  → ⏸ ai+human gate: review the spec, then /odin-loop:odin run to approve
+/odin-loop:odin run
   → plan: spec.md → plan.md — build units, file targets, build order (inline)
-  → ⏸ ai+human gate: review the plan, then /odin run to approve
-/odin run
+  → ⏸ ai+human gate: review the plan, then /odin-loop:odin run to approve
+/odin-loop:odin run
   → harness-design: each criterion becomes a test (red, no implementation yet)
   → harness-verify (Gungnir): a known-bad stub must fail ≥1 test (ai, auto)
   → implement: build against the harness, following the plan order · test: run it
@@ -29,33 +29,33 @@ You want to build something but the requirements are still fuzzy.
 The interview is the point: most failures are intent failures, so the loop
 refuses to write code until "done" has a testable definition.
 
-## Scenario 2 — Authoring a custom loop (`/odin new`)
+## Scenario 2 — Authoring a custom loop (`/odin-loop:odin new`)
 
 The default loop doesn't fit your work (say, a docs or research process).
 
 ```
-/odin new
+/odin-loop:odin new
   → interview: what stages, in order? each stage's goal?
   → for each stage: the gate check, and ai or ai+human?
   → where does each stage loop back on failure (on_fail)?
   → max_iterations cap?
   → any stage that needs a role or independent review? → assign a role (default review → reviewer) or agent: fresh
-  → writes .odin-loop/loops/<name>.yaml (validated) and offers /odin run <name>
+  → writes .odin-loop/loops/<name>.yaml (validated) and offers /odin-loop:odin run <name>
 ```
 
 Because a loop is just data, your custom loop runs through the exact same engine
 and gates as the built-in one.
 
-## Scenario 3 — Refining a loop (`/odin refine`)
+## Scenario 3 — Refining a loop (`/odin-loop:odin refine`)
 
 After a few runs, you notice you keep reworking the same stage.
 
 ```
-/odin refine
+/odin-loop:odin refine
   → analyzer reads run history + session aggregates (never message content)
   → e.g. "implement loops back a lot" → proposal: tighten the interview gate
   → writes a refinement report with before/after YAML diffs — nothing applied yet
-/odin refine apply
+/odin-loop:odin refine apply
   → applies the approved edits and bumps the loop's version
 ```
 

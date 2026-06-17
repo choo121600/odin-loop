@@ -146,7 +146,7 @@ and if accepting it would cross the threshold, confirm with the user first.
 **2f. Append a round entry** to `interview-log.md` (including the per-component
 clarity scores) and persist the `interview` object to `state.json` — its four
 contract fields `interview.threshold`, `interview.rounds`, `interview.ambiguity`,
-and `interview.topology`, the set `/odin status` reads. Per-component clarity
+and `interview.topology`, the set `/odin-loop:odin status` reads. Per-component clarity
 stays in the ledger, not in `state.json`.
 
 **2g. Soft caps.** Round ≥3: you may early-exit the moment the stop condition

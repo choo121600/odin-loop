@@ -5,14 +5,14 @@
 Odin-Loop ships with a built-in loop (`spec-harness-tdd`), but its real power is
 that **a loop is just data** — a YAML file you can write yourself. This guide
 takes you from "I've never thought about loops" to a custom loop you can start
-with `/odin run`.
+with `/odin-loop:odin run`.
 
 You don't write any code. You describe a workflow as a list of stages, each with
 a goal and a gate, and the engine runs it for you. By the end of this guide
 you'll have a working loop of your own that you can start with one command.
 
 > **Prerequisites:** Claude Code with the `odin-loop` plugin installed (so
-> `/odin list` works), a project directory, and basic YAML familiarity.
+> `/odin-loop:odin list` works), a project directory, and basic YAML familiarity.
 > Installing the plugin and the day-to-day `run`/`step`/`status` mechanics are
 > out of scope here — see `docs/features.md` for those.
 
@@ -93,7 +93,7 @@ The schema, top to bottom:
 ```yaml
 name: my-loop            # unique loop id (matches the filename)
 version: 1               # integer; bump on breaking edits
-description: one-liner   # shown in `/odin list`
+description: one-liner   # shown in `/odin-loop:odin list`
 max_iterations: 12       # cap on gate failures (loopbacks), not happy-path runs
 
 stages:
@@ -200,12 +200,12 @@ agent: { role: executor, fresh: true }   # object — run executor in a fresh su
 Copying the built-in `spec-harness-tdd.yaml` and editing it is a fine starting
 point — its header documents every field.
 
-### (b) Via `/odin new` (guided interview)
+### (b) Via `/odin-loop:odin new` (guided interview)
 
 If you'd rather be interviewed than start from a blank file, run:
 
 ```
-/odin new
+/odin-loop:odin new
 ```
 
 The engine asks you, a couple of questions at a time:
@@ -224,7 +224,7 @@ The engine asks you, a couple of questions at a time:
    `challenges`, and `auto_assist` (see §6½).
 
 It then writes a valid loop YAML to `.odin-loop/loops/<name>.yaml`, echoes it
-back, and offers to start it with `/odin run <name>`.
+back, and offers to start it with `/odin-loop:odin run <name>`.
 
 ---
 
@@ -390,25 +390,25 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate_loop.py" .odin-loop/loops/<name>
 ```
 
 It prints any blocking errors to fix (exit `1`) or confirms the loop is valid
-(exit `0`). `/odin new` and `/odin run` run it for you before starting. (It needs
+(exit `0`). `/odin-loop:odin new` and `/odin-loop:odin run` run it for you before starting. (It needs
 PyYAML; if that isn't installed it exits `3` and you fall back to the checklist
 above.)
 
 Then confirm the engine can see it and start it:
 
 ```
-/odin list              # your loop appears, with its description and stage count
-/odin run <name>        # starts the loop at its first stage
-/odin status            # shows the active run's state at any time
+/odin-loop:odin list              # your loop appears, with its description and stage count
+/odin-loop:odin run <name>        # starts the loop at its first stage
+/odin-loop:odin status            # shows the active run's state at any time
 ```
 
-On `/odin run <name>`, the engine creates a run, sets the first stage as current,
+On `/odin-loop:odin run <name>`, the engine creates a run, sets the first stage as current,
 executes it, and evaluates its gate. If that first gate is `ai+human`, the loop
-pauses and waits for your `/odin run` approval; if it's `ai`, it auto-advances.
+pauses and waits for your `/odin-loop:odin run` approval; if it's `ai`, it auto-advances.
 
 **Where to go next (out of scope for this guide):**
 
-- To improve a loop based on past runs, see `/odin refine` and the **muninn**
+- To improve a loop based on past runs, see `/odin-loop:odin refine` and the **muninn**
   skill — that's a separate workflow from authoring.
 - For the full mechanics of `run`, `step`, and `status`, see `docs/features.md`
   and `docs/design.md`.

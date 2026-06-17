@@ -3,7 +3,7 @@ name: muninn
 description: >
   Odin-Loop's memory raven. Analyzes your Odin-Loop run history and raw Claude
   Code session transcripts to find where you skip stages, re-work, or loop back,
-  then proposes concrete edits to a loop's YAML. Use for `/odin refine`, or when
+  then proposes concrete edits to a loop's YAML. Use for `/odin-loop:odin refine`, or when
   the user asks to improve/tune/refine a loop based on past sessions or history.
 ---
 
@@ -13,7 +13,7 @@ Muninn ("memory") is the raven that flies over your past work and reports back.
 This skill closes Odin-Loop's outer loop: **observe how you actually work →
 propose edits to your loop definition → you approve → the loop improves.**
 
-Triggered by `/odin refine [loop-name]`. If no loop name is given, default to the
+Triggered by `/odin-loop:odin refine [loop-name]`. If no loop name is given, default to the
 active run's loop, else `spec-harness-tdd`.
 
 ## Pipeline
@@ -54,7 +54,7 @@ active run's loop, else `spec-harness-tdd`.
    - a concrete unified-diff-style before/after of the loop YAML edits,
    - a one-line rationale per edit.
    Then present a summary and ask:
-   > 🦅 무닌 제안 N건. 적용하려면 **`/odin refine apply`**, 개별 선택/수정은 말씀해 주세요.
+   > 🦅 무닌 제안 N건. 적용하려면 **`/odin-loop:odin refine apply`**, 개별 선택/수정은 말씀해 주세요.
 
 5. **Apply only on approval.** When approved, edit the loop YAML in place
    (bump its `version`), and note in the report which edits were applied.

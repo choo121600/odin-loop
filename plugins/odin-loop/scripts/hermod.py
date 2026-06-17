@@ -356,7 +356,7 @@ def claude_command(schedule):
     """argv for the unattended headless run — scoped by a settings profile, NEVER a
     permission bypass."""
     _check_name(schedule["loop"])
-    return [_resolve_claude(), "-p", "/odin run %s" % schedule["loop"],
+    return [_resolve_claude(), "-p", "/odin-loop:odin run %s" % schedule["loop"],
             "--settings", schedule["settings_profile"]]
 
 

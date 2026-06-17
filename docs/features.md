@@ -6,26 +6,26 @@ What Odin-Loop can do, command by command.
 
 ## Command surface
 
-Everything is driven through `/odin <subcommand>`:
+Everything is driven through `/odin-loop:odin <subcommand>`:
 
 | Command | What it does |
 | --- | --- |
-| `/odin run` | Start or continue the active run. Auto-advances `ai` gates, pauses at `ai+human` gates. |
-| `/odin step <stage>` | Re-run exactly one stage by id, without auto-advancing. Manual override / redo. |
-| `/odin status` | Print the active run's loop, task, current stage, and history checklist. |
-| `/odin list` | List available loop definitions (project + built-in) with their stage counts. |
-| `/odin new` | Author a new custom loop by interview, then write it to `.odin-loop/loops/`. |
-| `/odin refine [loop]` | Mine past runs & sessions and propose loop edits (Muninn). |
-| `/odin refine apply` | Apply the most recent refinement proposal. |
+| `/odin-loop:odin run` | Start or continue the active run. Auto-advances `ai` gates, pauses at `ai+human` gates. |
+| `/odin-loop:odin step <stage>` | Re-run exactly one stage by id, without auto-advancing. Manual override / redo. |
+| `/odin-loop:odin status` | Print the active run's loop, task, current stage, and history checklist. |
+| `/odin-loop:odin list` | List available loop definitions (project + built-in) with their stage counts. |
+| `/odin-loop:odin new` | Author a new custom loop by interview, then write it to `.odin-loop/loops/`. |
+| `/odin-loop:odin refine [loop]` | Mine past runs & sessions and propose loop edits (Muninn). |
+| `/odin-loop:odin refine apply` | Apply the most recent refinement proposal. |
 
 `run`/`step`/`status`/`list`/`new` are handled by the engine; `refine` is handled
 by the Muninn skill.
 
 ## Hybrid execution
 
-`/odin run` drives the loop on its own but **stops at every `ai+human` gate**, so
+`/odin-loop:odin run` drives the loop on its own but **stops at every `ai+human` gate**, so
 you keep control at the decisions that matter. To approve a paused stage, run
-`/odin run` again. To revise it instead, just type feedback — the stage re-runs
+`/odin-loop:odin run` again. To revise it instead, just type feedback — the stage re-runs
 with your changes and re-gates. Loopbacks are bounded by `max_iterations`.
 
 ## The default loop: `spec-harness-tdd`
@@ -72,17 +72,17 @@ interview → plan → harness-design → harness-verify → implement → test 
 
 ## Authoring your own loop
 
-`/odin new` interviews you for stages, gates (`ai` vs `ai+human`), and `on_fail`
+`/odin-loop:odin new` interviews you for stages, gates (`ai` vs `ai+human`), and `on_fail`
 loopbacks, then writes a valid loop YAML. The engine validates unique stage ids,
 that every `on_fail` points to a real stage, and that every gate has a mode and a
 check before saving.
 
 ## Muninn — self-refinement
 
-`/odin refine` runs a bundled analyzer over your run history and raw session
+`/odin-loop:odin refine` runs a bundled analyzer over your run history and raw session
 transcripts (aggregates only — never message content), then proposes concrete,
 minimal edits to a loop's YAML — for example, tightening an earlier gate when a
-later stage loops back a lot. Nothing is applied until you run `/odin refine apply`.
+later stage loops back a lot. Nothing is applied until you run `/odin-loop:odin refine apply`.
 
 ---
 
