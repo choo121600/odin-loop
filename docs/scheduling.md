@@ -8,7 +8,7 @@
 
 ## Overview
 
-`/odin run` keeps you in the loop: it pauses at every `ai+human` gate for your
+`/odin-loop:odin run` keeps you in the loop: it pauses at every `ai+human` gate for your
 approval. Some loops, though, have **no human gate at all** — every gate is `ai`, so
 they run start to finish on their own (the daily board loops, a PR-merge loop, an
 audit-to-issues loop). Those are the loops Hermóðr can put on a schedule.
@@ -25,7 +25,7 @@ split lets you review a schedule before anything touches your system.
 
 ## Prerequisites
 
-- **Odin-Loop installed** and working (`/odin run` drives a loop for you).
+- **Odin-Loop installed** and working (`/odin-loop:odin run` drives a loop for you).
 - **A fully-autonomous loop** to schedule — every gate `ai`, no `interview` stage. See
   [Which loops can be scheduled](#which-loops-can-be-scheduled).
 - The **`claude` CLI logged in** — the scheduled run is a headless `claude -p` process
@@ -60,7 +60,7 @@ Author an **autonomous variant**. "Loops are data," so make a copy whose human g
 lowered to `ai` (the AI decides instead of pausing) and schedule that one. Removing a
 human gate is not free — that checkpoint was a safety net — so tighten the automated
 gates around the hole (default to the more conservative branch, keep the clean-review
-gate strict). Do it as a deliberate authoring act with `/odin new` or a hand copy; the
+gate strict). Do it as a deliberate authoring act with `/odin-loop:odin new` or a hand copy; the
 scheduler will not do it for you.
 
 ## Quickstart
@@ -70,7 +70,7 @@ Schedule `daily-issue-plan` to fill your board every morning at 09:00.
 **1. Register** the schedule (validates it, then writes it as data):
 
 ```
-/odin schedule register daily-issue-plan "0 9 * * *"
+/odin-loop:odin schedule register daily-issue-plan "0 9 * * *"
 ```
 
 `register` checks schedulability, then surfaces the loop's **outward-facing actions**
@@ -86,13 +86,13 @@ Nothing has touched your OS yet.
 **2. Install** the OS trigger:
 
 ```
-/odin schedule install daily-issue-plan
+/odin-loop:odin schedule install daily-issue-plan
 ```
 
 On macOS this writes a LaunchAgent at
 `~/Library/LaunchAgents/com.odin-loop.hermod.daily-issue-plan.plist` and loads it; on
 Linux it adds a crontab line. The trigger runs
-`claude -p "/odin run daily-issue-plan" --settings <profile>` at 09:00 each day.
+`claude -p "/odin-loop:odin run daily-issue-plan" --settings <profile>` at 09:00 each day.
 
 **3. Verify** it fired — read the run log:
 
@@ -131,21 +131,21 @@ List every schedule with its cron, install status, acknowledged outward actions,
 and the next scheduled fire time (computed from the cron):
 
 ```
-/odin schedule list
+/odin-loop:odin schedule list
 ```
 
 Remove one — this **uninstalls the OS trigger if it is installed**, then deletes the
 declaration and its profile, so nothing is left firing against a schedule you removed:
 
 ```
-/odin schedule remove daily-issue-plan
+/odin-loop:odin schedule remove daily-issue-plan
 ```
 
 `uninstall` unloads the trigger but keeps the declaration, if you want to stop a
 schedule without forgetting it:
 
 ```
-/odin schedule uninstall daily-issue-plan
+/odin-loop:odin schedule uninstall daily-issue-plan
 ```
 
 ## Notifications
@@ -154,7 +154,7 @@ A scheduled run only writes its outcome to the log; turn on a desktop **notifica
 so a failure is noticed without reading it. Set the policy at `register`:
 
 ```
-/odin schedule register daily-issue-plan "0 9 * * *" --notify on-failure
+/odin-loop:odin schedule register daily-issue-plan "0 9 * * *" --notify on-failure
 ```
 
 - `on-failure` (default) — notify only on a real problem (an `error`, or a `refused`
@@ -188,7 +188,7 @@ launchd's calendar format can't express every cron expression (steps and ranges 
 
 ## Command reference
 
-All commands are `/odin schedule <subcommand>`; under the hood they run
+All commands are `/odin-loop:odin schedule <subcommand>`; under the hood they run
 `scripts/hermod.py`, which you can also call directly (handy for CI/scripting):
 
 | Command | What it does |
@@ -229,5 +229,5 @@ Everything a schedule needs lives under the gitignored `.odin-loop/schedules/`:
 ## See also
 
 - [Authoring custom loops](authoring-loops.md) — write the loop you want to schedule.
-- [Features](features.md) — every `/odin` command, including `schedule`.
+- [Features](features.md) — every `/odin-loop:odin` command, including `schedule`.
 - [Design](design.md) — the loop-as-data model, gates, and the Norse architecture.

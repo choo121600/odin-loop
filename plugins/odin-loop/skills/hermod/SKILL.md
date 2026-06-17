@@ -3,7 +3,7 @@ name: hermod
 description: >
   Hermóðr — the Odin-Loop scheduler. Registers a FULLY-AUTONOMOUS loop (one with no
   human gate) to run unattended on the OS scheduler (macOS launchd / crontab), and is
-  the fire-time runner. Use whenever the user invokes /odin schedule (register | list |
+  the fire-time runner. Use whenever the user invokes /odin-loop:odin schedule (register | list |
   remove | install | uninstall), or asks to run a loop on a cron/schedule, automate a
   daily loop, or set up an unattended/overnight Odin-Loop run.
 ---
@@ -12,7 +12,7 @@ description: >
 
 Hermóðr runs Odin's errands on a schedule. He takes a **fully-autonomous** loop — one
 that never pauses for a human — and registers it with the OS scheduler so it fires
-unattended, then drives `/odin run <loop>` headlessly each tick.
+unattended, then drives `/odin-loop:odin run <loop>` headlessly each tick.
 
 This preserves Odin-Loop's core rule — *humans hold the wheel at `ai+human` gates* —
 **by construction**: only loops with **no human gate** are schedulable, so an
@@ -43,7 +43,7 @@ wiring**. So a schedule can be reviewed before anything touches launchd/cron.
 
 ---
 
-## `/odin schedule register <loop> "<cron>"`
+## `/odin-loop:odin schedule register <loop> "<cron>"`
 
 Declare a schedule. **Validate, surface the blast radius, get acknowledgment, then
 write** — in this order:
@@ -58,7 +58,7 @@ write** — in this order:
    hatch:
    > `<loop>` 은 사람 게이트가 있어 무인 스케줄이 불가합니다 (`<stage>`: `<mode>`).
    > 무인용으로 쓰려면 **autonomous 변종을 작성**하세요 — 모든 게이트를 `ai`로, deep
-   > 인터뷰 없이 (`/odin new`, 또는 사람 게이트를 `ai`로 낮춘 복사본). 사람 게이트를
+   > 인터뷰 없이 (`/odin-loop:odin new`, 또는 사람 게이트를 `ai`로 낮춘 복사본). 사람 게이트를
    > 떼면 그 자리를 메우던 안전망이 사라지니, 주변 `ai` 게이트를 함께 조이세요.
 3. **Blast-radius acknowledgment.** Show the loop's outward-facing actions and require
    an **explicit yes** before writing:
@@ -81,20 +81,20 @@ write** — in this order:
 A bad cron expression is rejected (`register` exits 1). Capture the **absolute** project
 root for `--project-dir` — the headless trigger `cd`s there before running.
 
-## `/odin schedule install <loop>`
+## `/odin-loop:odin schedule install <loop>`
 
 Generate the OS trigger from the declaration and load it:
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/hermod.py" install <loop> --project-dir "<root>"
 ```
 macOS → a LaunchAgent plist + `launchctl bootstrap`; Linux (or `platform: cron`) → a
-crontab entry. The trigger runs `claude -p "/odin run <loop>" --settings <profile>`
+crontab entry. The trigger runs `claude -p "/odin-loop:odin run <loop>" --settings <profile>`
 under a full PATH, guarded by a lock and logged to `<loop>.log`. Report where it landed.
 
 > The real overnight fire and the `launchctl`/`crontab` load are environment-dependent;
 > confirm the first fire by checking `<loop>.log`, not by assuming.
 
-## `/odin schedule list`
+## `/odin-loop:odin schedule list`
 
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/hermod.py" list --project-dir "<root>"
@@ -105,7 +105,7 @@ actions** (so the blast radius stays visible), and its **runtime health** — `l
 cron). The `last_fire`/`recent_failures` come from `<loop>.log`; all are best-effort
 (a missing log just shows `never`).
 
-## `/odin schedule remove <loop>` / `uninstall <loop>`
+## `/odin-loop:odin schedule remove <loop>` / `uninstall <loop>`
 
 `uninstall` unloads the OS trigger (`launchctl bootout` / crontab edit) and removes the
 plist — leaving nothing behind. `remove` deletes the declaration + profile. Removing a
@@ -117,7 +117,7 @@ The trigger invokes `hermod.py run <loop>`, which:
 1. takes the lock (`<loop>.lock`); a live previous run → **skip**, don't stack;
 2. **re-validates schedulability** — if the loop has since gained a human gate or deep
    interview, it **refuses and logs**, never running into a pause;
-3. runs `claude -p "/odin run <loop>" --settings <profile>`;
+3. runs `claude -p "/odin-loop:odin run <loop>" --settings <profile>`;
 4. appends the outcome to `<loop>.log`; a missing `claude`/`gh`/`git` fails loudly.
 
 ---

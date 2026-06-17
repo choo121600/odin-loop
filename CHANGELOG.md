@@ -11,6 +11,21 @@ _Add new entries here as you merge changes, grouped under `Added` / `Changed` /
 `Fixed` / `Removed`. On release, rename this heading to the new version
 (e.g. `## [0.7.0] — YYYY-MM-DD`), tag it, and start a fresh `Unreleased` section._
 
+## [0.7.2] — 2026-06-17
+
+### Fixed
+- **Scheduled runs actually run the loop now.** The fire-time runner invoked
+  `claude -p "/odin run <loop>"`, but a marketplace-plugin command is only valid when
+  **qualified** — bare `/odin` prints `Unknown command: /odin` and silently no-ops. The
+  runner now spawns `/odin-loop:odin run <loop>`, verified by a real launchd fire
+  (the loop ran end-to-end). Surfaced by integration testing the scheduler.
+
+### Changed
+- **Docs and skills use the qualified `/odin-loop:odin …` form.** Every `/odin run`,
+  `/odin schedule`, etc. in the README, `docs/`, and skill files was a bare `/odin`,
+  which Claude Code does not resolve for a marketplace plugin — all replaced with the
+  working `/odin-loop:odin` form.
+
 ## [0.7.1] — 2026-06-17
 
 ### Fixed
@@ -28,7 +43,7 @@ in `list`.
 ### Added
 - **Scheduling (Hermóðr).** Register a fully-autonomous loop (every gate `ai`, no
   human gate) to run unattended on the OS scheduler (macOS launchd / crontab) via
-  `/odin schedule register|install|list|remove|uninstall`. Schedulability is enforced
+  `/odin-loop:odin schedule register|install|list|remove|uninstall`. Schedulability is enforced
   at register **and** on every fire (`validate_loop.py --schedulable`); the unattended
   run is contained by a conservative scoped settings profile (never
   `--dangerously-skip-permissions`), an explicit outward-action acknowledgment, an
@@ -36,10 +51,10 @@ in `list`.
 - **Scheduled-run notifications.** A scheduled loop emits a best-effort desktop
   notification on its outcome, controlled by a per-schedule
   `notify: off | on-failure | always` policy (default `on-failure`) —
-  `/odin schedule register … --notify`. OS-native (macOS `osascript` / Linux
+  `/odin-loop:odin schedule register … --notify`. OS-native (macOS `osascript` / Linux
   `notify-send`, no extra dependency); a notify failure is logged and never changes the
   run's outcome or exit status.
-- **Schedule status in `list`.** `/odin schedule list` now shows each schedule's runtime
+- **Schedule status in `list`.** `/odin-loop:odin schedule list` now shows each schedule's runtime
   health — last fire time + outcome (or `never`), a recent-failure count, and the next
   fire time computed from the cron — alongside its install status. Read-only; log parsing
   and the next-fire computation are best-effort.
@@ -64,7 +79,7 @@ run loops, plus muninn / validator fixes that landed since 0.6.0.
   `skills/loop-engine/deep-interview.md` path instead of a bare filename (#14).
 - `state.json` `interview`-object field contract reconciled across `SKILL.md` and
   `deep-interview.md`: the written set is `{ threshold, rounds, ambiguity,
-  topology }` (what `/odin status` reads); per-component clarity stays in
+  topology }` (what `/odin-loop:odin status` reads); per-component clarity stays in
   `interview-log.md` (#15).
 - Korean authoring-loops guide is reachable and self-consistent — added the EN/KO
   language switcher, pointed its cross-references at the `.ko.md` siblings, and
@@ -113,9 +128,10 @@ run loops, plus muninn / validator fixes that landed since 0.6.0.
 
 ### Added
 - Initial release: the loop engine, the default loop, custom-loop authoring, and
-  Muninn (`/odin refine`) session-mining refinement.
+  Muninn (`/odin-loop:odin refine`) session-mining refinement.
 
-[Unreleased]: https://github.com/choo121600/odin-loop/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/choo121600/odin-loop/compare/v0.7.2...HEAD
+[0.7.2]: https://github.com/choo121600/odin-loop/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/choo121600/odin-loop/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/choo121600/odin-loop/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/choo121600/odin-loop/compare/v0.6.0...v0.6.1

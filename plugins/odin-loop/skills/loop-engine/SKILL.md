@@ -2,7 +2,7 @@
 name: loop-engine
 description: >
   Odin-Loop engine. Runs, steps, inspects, lists, and authors workflow loops
-  defined as YAML. Use whenever the user invokes /odin (run | step | status |
+  defined as YAML. Use whenever the user invokes /odin-loop:odin (run | step | status |
   list | new), or asks to run/continue/author a dev workflow loop, spec→harness
   →verify→implement→test cycle, or a custom loop.
 ---
@@ -15,21 +15,21 @@ loop; his ravens **Huginn** (thought / interview) and **Muninn** (memory) and
 his spear **Gungnir** (the verification gate that never misses) are the moving
 parts.
 
-This skill handles five actions, dispatched on the first argument of `/odin`:
+This skill handles five actions, dispatched on the first argument of `/odin-loop:odin`:
 
 | Command                | Action                                            |
 | ---------------------- | ------------------------------------------------- |
-| `/odin run`            | Start or continue the active run (hybrid drive)   |
-| `/odin step <stage>`   | Re-run one specific stage, ignoring order         |
-| `/odin status`         | Show the active run's state                        |
-| `/odin list`           | List available loop definitions                   |
-| `/odin new`            | Author a new custom loop by interview             |
+| `/odin-loop:odin run`            | Start or continue the active run (hybrid drive)   |
+| `/odin-loop:odin step <stage>`   | Re-run one specific stage, ignoring order         |
+| `/odin-loop:odin status`         | Show the active run's state                        |
+| `/odin-loop:odin list`           | List available loop definitions                   |
+| `/odin-loop:odin new`            | Author a new custom loop by interview             |
 
-> `/odin refine [loop]` (and `/odin refine apply`) is **not** handled here — it is
+> `/odin-loop:odin refine [loop]` (and `/odin-loop:odin refine apply`) is **not** handled here — it is
 > the memory raven's job, handled by the **`muninn`** skill. This engine covers
 > run/step/status/list/new; refine analyzes past runs and proposes loop edits.
 
-If no run is active and the user types `/odin run`, ask which loop to start
+If no run is active and the user types `/odin-loop:odin run`, ask which loop to start
 (default to `spec-harness-tdd`).
 
 ---
@@ -92,17 +92,17 @@ and "promote" the harness out of the run dir explicitly.
 
 Each history entry's `gate` field records **how** the stage passed, using a fixed vocabulary so tools can count gates reliably: `gate: "ai"` for an `ai` gate that auto-passed; `gate: "ai-pending"` for an `ai+human` (or `human`) stage that passed AI judgment and is now awaiting approval (written at step 2d); and `gate: "approved"` when the human approves (written at step 1). An `ai+human` gate therefore appends **two** pass entries — `ai-pending` then `approved` — but is **one** gate: a consumer counting gates must treat the `ai-pending` entry and its later `approved` entry as a single human-approved gate, never as one AI gate plus one human gate.
 
-The optional `interview` object is written only by a deep-interview stage (`interview.mode: deep`): it mirrors the convergence the engine is tracking in `interview-log.md` so `/odin status` can show it. Its four fields above — `threshold`, `rounds`, `ambiguity`, and `topology` — are the write contract (all four are what `/odin status` reads, so persist every one); finer detail such as per-component clarity stays in `interview-log.md`, not here. See `deep-interview.md` for the full procedure.
+The optional `interview` object is written only by a deep-interview stage (`interview.mode: deep`): it mirrors the convergence the engine is tracking in `interview-log.md` so `/odin-loop:odin status` can show it. Its four fields above — `threshold`, `rounds`, `ambiguity`, and `topology` — are the write contract (all four are what `/odin-loop:odin status` reads, so persist every one); finer detail such as per-component clarity stays in `interview-log.md`, not here. See `deep-interview.md` for the full procedure.
 
 ---
 
-## `/odin run` — the hybrid drive
+## `/odin-loop:odin run` — the hybrid drive
 
 This is the core algorithm. Drive automatically, but **stop at human gates**.
 
 1. **Load or create the run.**
    - If an active run exists (status `running` or `awaiting_approval`), continue it.
-   - If status is `awaiting_approval` and the user is now invoking `/odin run`
+   - If status is `awaiting_approval` and the user is now invoking `/odin-loop:odin run`
      again, treat that as **approval** of the paused stage: record
      `gate: approved` in history, then advance to the next stage.
    - If no run exists, ask which loop (default `spec-harness-tdd`) and what the
@@ -157,7 +157,7 @@ This is the core algorithm. Drive automatically, but **stop at human gates**.
       - If `gate.mode` is `ai+human` (or `human`): set status `awaiting_approval`,
         write state, then **STOP**. Present a concise summary (what was produced,
         why the gate passed) and tell the user:
-        > ✅ `<stage>` 게이트 통과. 검토 후 **승인하려면 `/odin run`**,
+        > ✅ `<stage>` 게이트 통과. 검토 후 **승인하려면 `/odin-loop:odin run`**,
         > 수정이 필요하면 그냥 피드백을 말씀해 주세요.
       - If `gate.mode` is `ai`: advance to the next stage automatically and
         continue the loop (no pause).
@@ -167,7 +167,7 @@ This is the core algorithm. Drive automatically, but **stop at human gates**.
 3. **Always persist `state.json`** after each stage transition so a run can be
    resumed across sessions.
 
-When the user gives feedback instead of `/odin run` at a pause, treat it as a
+When the user gives feedback instead of `/odin-loop:odin run` at a pause, treat it as a
 revision request: re-run the current stage incorporating the feedback, then gate
 again.
 
@@ -205,27 +205,27 @@ the `consumes` artifacts (read fresh from disk), and the `produces` path(s) —
 nothing from this conversation. When it is **inline**, adopt the persona here.
 Either way, prefer the worker's own blocking/non-blocking labels at the gate.
 
-## `/odin step <stage-id>`
+## `/odin-loop:odin step <stage-id>`
 
 Run exactly one stage by id, regardless of `current_stage`, then evaluate its
 gate and report — but do **not** auto-advance. Update `current_stage` to the
 stepped stage. Use this for manual override / redo.
 
-## `/odin status`
+## `/odin-loop:odin status`
 
 Read `state.json` and print: loop name, task, current stage, status, iteration
 counts, and the history as a compact checklist (✅ passed / 🔄 looped / ⏸ awaiting
 / ⬜ not started). If an `interview` block is present, also show its convergence:
 rounds so far, current ambiguity vs `threshold`, and the confirmed topology.
 
-## `/odin list`
+## `/odin-loop:odin list`
 
 List loops from project `.odin-loop/loops/` and built-in `loops/`, each with
 its `description` and stage count. Mark which is the active run's loop.
 
 ---
 
-## `/odin new` — author a custom loop (dogfooding the philosophy)
+## `/odin-loop:odin new` — author a custom loop (dogfooding the philosophy)
 
 Build the user's loop using the **same deep-interview principle** the default
 loop preaches. Do not just dump a template — interview, then generate.
@@ -252,14 +252,14 @@ Ask (1–2 at a time):
 Then write a valid loop YAML (same schema as `loops/spec-harness-tdd.yaml`,
 documented at its top) to `<project>/.odin-loop/loops/<name>.yaml`. **Validate the
 written file** (see [Validating a loop](#validating-a-loop)) and fix anything it
-flags. Then echo the file back, and offer to start it with `/odin run <name>`.
+flags. Then echo the file back, and offer to start it with `/odin-loop:odin run <name>`.
 
 ---
 
 ## Validating a loop
 
 Loop structure is checked by code, not by remembering the rules. Run the bundled
-validator on any loop YAML before a NEW run starts and after `/odin new` writes one:
+validator on any loop YAML before a NEW run starts and after `/odin-loop:odin new` writes one:
 
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/validate_loop.py" <path/to/loop.yaml>

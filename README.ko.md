@@ -10,7 +10,7 @@
 
 대부분의 "AI 개발 워크플로우" 도구는 **고정된 하나의 루프**를 강요합니다. Odin-Loop는
 루프 그 자체를 1급 시민, 즉 *수정 가능한 산출물*로 다룹니다 — 엔진이 읽고 실행하는 YAML
-파일이죠. 강력한 기본 루프가 함께 제공되며, `/odin new`로 자신만의 루프를 만들고 다듬을
+파일이죠. 강력한 기본 루프가 함께 제공되며, `/odin-loop:odin new`로 자신만의 루프를 만들고 다듬을
 수 있습니다.
 
 ```
@@ -24,7 +24,7 @@ deep interview → plan → harness design → harness verify → implement → 
 | --- | --- | --- |
 | **오딘(Odin)** | 사냥을 이끄는 지혜의 추구자 | 루프를 구동하는 엔진 |
 | **후긴(Huginn, "사고")** | 추론의 까마귀 | deep-interview 단계 |
-| **무닌(Muninn, "기억")** | 기억의 까마귀 | 세션 마이닝 교정기 (`/odin refine`) |
+| **무닌(Muninn, "기억")** | 기억의 까마귀 | 세션 마이닝 교정기 (`/odin-loop:odin refine`) |
 | **궁니르(Gungnir)** | 빗나가지 않는 창 | 하니스 검증 게이트 |
 
 ## 기본 루프가 이렇게 설계된 이유
@@ -56,42 +56,42 @@ deep interview → plan → harness design → harness verify → implement → 
 
 ## 빠른 시작
 
-첫 `/odin run` 시 Odin-Loop는 어떤 루프를 쓸지 묻고(기본 `spec-harness-tdd`) 딥
+첫 `/odin-loop:odin run` 시 Odin-Loop는 어떤 루프를 쓸지 묻고(기본 `spec-harness-tdd`) 딥
 인터뷰를 시작합니다 — 코드를 쓰기 전에 요청을 테스트 가능한 acceptance criteria로
 바꿉니다.
 
 ```
-/odin run        # 활성 런 없음 → 루프 선택 후 인터뷰
-/odin status     # 런 위치 확인
+/odin-loop:odin run        # 활성 런 없음 → 루프 선택 후 인터뷰
+/odin-loop:odin status     # 런 위치 확인
 ```
 
-모든 `ai+human` 게이트에서 멈춥니다. `/odin run`을 다시 실행하면 승인, 피드백을
+모든 `ai+human` 게이트에서 멈춥니다. `/odin-loop:odin run`을 다시 실행하면 승인, 피드백을
 입력하면 그 단계를 수정합니다.
 
 ## 사용법
 
 ```
-/odin run            # 런 시작 또는 이어가기 (사람 승인 게이트에서 멈춤)
-/odin step <stage>   # 특정 단계만 다시 실행
-/odin status         # 현재 런 상태 보기
-/odin list           # 사용 가능한 루프 목록
-/odin new            # 인터뷰를 통해 나만의 루프 작성
-/odin refine [loop]  # 과거 작업을 분석해 루프 수정안 제안 (무닌)
+/odin-loop:odin run            # 런 시작 또는 이어가기 (사람 승인 게이트에서 멈춤)
+/odin-loop:odin step <stage>   # 특정 단계만 다시 실행
+/odin-loop:odin status         # 현재 런 상태 보기
+/odin-loop:odin list           # 사용 가능한 루프 목록
+/odin-loop:odin new            # 인터뷰를 통해 나만의 루프 작성
+/odin-loop:odin refine [loop]  # 과거 작업을 분석해 루프 수정안 제안 (무닌)
 ```
 
 ### 하이브리드 실행
 
-`/odin run`은 루프를 자동으로 진행하되, **`ai+human` 게이트에서 멈춰** 당신이 통제권을
-유지하게 합니다. 멈춘 단계를 승인하려면 `/odin run`을 다시 실행하면 되고, 수정이
+`/odin-loop:odin run`은 루프를 자동으로 진행하되, **`ai+human` 게이트에서 멈춰** 당신이 통제권을
+유지하게 합니다. 멈춘 단계를 승인하려면 `/odin-loop:odin run`을 다시 실행하면 되고, 수정이
 필요하면 그냥 피드백을 입력해 그 단계를 다시 돌리고 재검증하면 됩니다.
 
 ### 무닌 — 스스로 다듬어지는 루프
 
-`/odin refine`은 당신의 Odin-Loop 런 기록과 Claude Code 세션 기록을 마이닝해, 당신이
+`/odin-loop:odin refine`은 당신의 Odin-Loop 런 기록과 Claude Code 세션 기록을 마이닝해, 당신이
 어디서 단계를 건너뛰거나 재작업하거나 루프백하는지 찾아낸 뒤 **루프 YAML에 대한 구체적인
 수정안**을 제안합니다 (예: "`implement` 단계가 자주 루프백함 → `interview` 게이트를
 강화"). 번들된 분석기는 집계 신호만 추출하며(메시지 내용은 절대 읽지 않음), **승인 없이는
-아무것도 적용되지 않습니다** — `/odin refine apply`로 수락합니다. 루프가 당신의 실제
+아무것도 적용되지 않습니다** — `/odin-loop:odin refine apply`로 수락합니다. 루프가 당신의 실제
 작업 방식으로부터 배웁니다.
 
 ## 문서

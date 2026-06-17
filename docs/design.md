@@ -10,8 +10,8 @@ from: **the loop is data, not code.**
 A workflow loop is a YAML file. The engine reads that file and executes whatever
 stages it declares — it never hardcodes a particular workflow. Change the YAML
 and you change the process; no engine code changes. This is what lets you ship a
-strong default loop *and* let users author their own with `/odin new`, or have
-Muninn propose edits with `/odin refine`.
+strong default loop *and* let users author their own with `/odin-loop:odin new`, or have
+Muninn propose edits with `/odin-loop:odin refine`.
 
 The built-in loop ([`spec-harness-tdd.yaml`](../plugins/odin-loop/loops/spec-harness-tdd.yaml))
 is the reference for the schema; its header documents every field.
@@ -22,7 +22,7 @@ is the reference for the schema; its header documents every field.
 | --- | --- |
 | **Odin** | the engine that drives the loop |
 | **Huginn** ("thought") | the deep-**interview** stage — turns intent into testable criteria |
-| **Muninn** ("memory") | the session-mining refiner (`/odin refine`) |
+| **Muninn** ("memory") | the session-mining refiner (`/odin-loop:odin refine`) |
 | **Gungnir** | the spear that never misses — the **harness-verify** gate |
 
 Huginn and Gungnir are *stages inside a loop*; Muninn is the *outer* loop that
