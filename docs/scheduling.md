@@ -48,11 +48,18 @@ python3 "$CLAUDE_PLUGIN_ROOT/scripts/validate_loop.py" --schedulable <path/to/lo
 # exit 0 → schedulable · exit 1 → not (it prints which stage blocks it)
 ```
 
-The line falls exactly where you'd want it. Of the loops that ship with Odin-Loop,
-`audit-to-issues`, `daily-issue-plan`, and `pr-review-merge` are schedulable; the ones
-that gather intent or take a sign-off — `daily-issue-run` (its `triage` gate),
-`tech-docs` (its `brief` gate), and `spec-harness-tdd` (interview / plan / review) —
-are not.
+The line falls exactly where you'd want it. To make the distinction concrete, here are
+six loops of the kind you'd [author](authoring-loops.md): `audit-to-issues`,
+`daily-issue-plan`, and `pr-review-merge` are schedulable; the ones that gather intent
+or take a sign-off — `daily-issue-run` (its `triage` gate), `tech-docs` (its `brief`
+gate), and `spec-harness-tdd` (interview / plan / review) — are not.
+
+> **These are examples, not bundled loops.** Odin-Loop ships exactly one loop,
+> `spec-harness-tdd`, and — as the list above shows — it is itself *not* schedulable
+> (interview / plan / review gates). So a fresh install has **no** schedulable loop out
+> of the box: you [author](authoring-loops.md) the autonomous loop you want to schedule
+> first. The names used throughout this guide (`daily-issue-plan`, …) are illustrative
+> loops you'd write, not files the plugin provides.
 
 ### Want to schedule a human-gated loop anyway?
 
@@ -66,6 +73,10 @@ scheduler will not do it for you.
 ## Quickstart
 
 Schedule `daily-issue-plan` to fill your board every morning at 09:00.
+
+> This walkthrough uses `daily-issue-plan` as the worked example. It is **not** a
+> bundled loop — [author it first](authoring-loops.md) (or any all-`ai` loop of your
+> own) so `register` can find it; otherwise the command reports a missing loop.
 
 **1. Register** the schedule (validates it, then writes it as data):
 

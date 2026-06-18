@@ -46,10 +46,17 @@ python3 "$CLAUDE_PLUGIN_ROOT/scripts/validate_loop.py" --schedulable <경로/루
 # exit 0 → 스케줄 가능 · exit 1 → 불가(어느 단계가 막는지 출력)
 ```
 
-선이 떨어지는 자리가 정확합니다. Odin-Loop 기본 루프 중 `audit-to-issues`, `daily-issue-plan`,
-`pr-review-merge`는 스케줄 가능하고, 의도를 모으거나 사인오프를 받는 루프 —
+선이 떨어지는 자리가 정확합니다. 구분을 구체적으로 보이기 위해, 여러분이 직접
+[작성](authoring-loops.ko.md)할 법한 루프 여섯 개를 예로 들면 — `audit-to-issues`,
+`daily-issue-plan`, `pr-review-merge`는 스케줄 가능하고, 의도를 모으거나 사인오프를 받는 루프 —
 `daily-issue-run`(`triage` 게이트), `tech-docs`(`brief` 게이트),
 `spec-harness-tdd`(interview / plan / review) — 는 불가합니다.
+
+> **이들은 예시이지 번들된 루프가 아닙니다.** Odin-Loop가 함께 제공하는 루프는 `spec-harness-tdd`
+> 하나뿐이며, 위 목록에서 보듯 그 루프 자체가 스케줄 *불가*합니다(interview / plan / review 게이트).
+> 즉 갓 설치한 상태에는 스케줄 가능한 루프가 **하나도** 없습니다 — 스케줄하려는 autonomous 루프를
+> 먼저 [작성](authoring-loops.ko.md)해야 합니다. 이 문서 곳곳에 쓰인 이름(`daily-issue-plan` 등)은
+> 여러분이 작성할 예시 루프이지 플러그인이 제공하는 파일이 아닙니다.
 
 ### 사람 게이트 루프를 굳이 스케줄하려면?
 
@@ -62,6 +69,10 @@ python3 "$CLAUDE_PLUGIN_ROOT/scripts/validate_loop.py" --schedulable <경로/루
 ## 빠른 시작
 
 `daily-issue-plan`을 매일 아침 09:00에 보드를 채우도록 스케줄합니다.
+
+> 이 안내는 `daily-issue-plan`을 예시로 씁니다. 번들된 루프가 **아니므로**, `register`가 찾을 수
+> 있도록 [먼저 작성](authoring-loops.ko.md)하세요(또는 직접 만든 all-`ai` 루프 아무거나). 그렇지
+> 않으면 명령이 "루프 없음"을 보고합니다.
 
 **1. 등록**(검증한 뒤 데이터로 기록):
 
