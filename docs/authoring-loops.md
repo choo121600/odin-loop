@@ -234,7 +234,10 @@ Here is a complete custom loop for writing technical docs. It frames the doc,
 outlines it, drafts it, fact-checks every claim, then revises. The YAML below is
 abbreviated for space: every `id`, `title`, `goal`, gate `mode`, and `on_fail`
 is shown verbatim, while the long `prompt` bodies and `check` texts are trimmed
-(shown with `...`). The full file lives at `.odin-loop/loops/tech-docs.yaml`.
+(shown with `...`). The full file lives at `.odin-loop/loops/tech-docs.yaml` —
+an example loop **you author in your own project**, not one bundled with the
+plugin (which ships only `spec-harness-tdd`). That `.odin-loop/loops/` path is
+your project's custom-loop directory, the place `/odin-loop:odin new` writes to.
 
 ```yaml
 name: tech-docs
