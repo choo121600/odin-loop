@@ -143,8 +143,8 @@ The role shapes *how* a worker behaves; the stage's gate and artifacts stay in t
 
 ## Status
 
-`v0.6.0` — actively developed; the default loop runs end-to-end. See
-[CHANGELOG.md](CHANGELOG.md) for the full version history.
+Actively developed; the default loop runs end-to-end. See
+[CHANGELOG.md](CHANGELOG.md) for the current version and full release history.
 
 ## License
 
