@@ -42,7 +42,8 @@
 #     gate          : the advance condition
 #       mode        : ai        -> engine judges, auto-advances on pass
 #                     ai+human  -> engine judges, then PAUSES for human approval
-#                     human     -> human decides directly
+#                     human     -> today an alias of ai+human (engine judges,
+#                                  then pauses for approval); no shipped loop uses it
 #       check       : the condition to evaluate (a testable assertion)
 #       on_fail     : stage id to jump to when the gate fails
 #                     (omit -> retry this same stage)

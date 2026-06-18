@@ -53,7 +53,9 @@ plain language:
   - `ai` — the engine judges the check and **auto-advances** on pass (no pause).
   - `ai+human` — the engine judges the check, then **pauses for your approval**
     before advancing.
-  - `human` — you decide directly.
+  - `human` — today an **alias of `ai+human`**: the engine still judges the
+    check first, then pauses for you (it is not a distinct "decide without AI
+    judgment" mode). No shipped loop uses it; reach for `ai+human`.
 - **gate check** — the testable assertion the gate evaluates, e.g. "all tests in
   `harness/` pass." Write it so it's observable, not a matter of opinion.
 - **on_fail** — the stage `id` to jump back to when the gate fails. Omit it to
