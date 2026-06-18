@@ -157,37 +157,43 @@ def validate_loop(path, doc):
                 err(f"{where}: `interview` must be a mapping")
             else:
                 mode = iv.get("mode")
+                # The rules below encode the deep-interview playbook's contract,
+                # so they apply ONLY to `interview.mode: deep` (matching SKILL.md,
+                # which scopes them to "any stage with interview.mode: deep"). A
+                # non-deep block gets the unknown-mode warning but not these — see
+                # issue #39.
                 if mode != "deep":
                     warn(f"{where}: interview.mode `{mode!r}` is unknown "
                          "(only `deep` is supported today)")
-                if effective_fresh:
-                    err(f"{where}: a deep interview talks to the user — it cannot "
-                        "run in a fresh context")
-                produces = st.get("produces")
-                if not isinstance(produces, list):
-                    err(f"{where}: a deep interview's `produces` must be a list "
-                        "(otherwise the interview-log.md rule degrades to a "
-                        "substring test and a scalar silently passes)")
-                elif "interview-log.md" not in produces:
-                    err(f"{where}: a deep interview must list `interview-log.md` "
-                        "in `produces` (the convergence ledger the gate reads)")
-                thr = iv.get("threshold")
-                if thr is not None and not (isinstance(thr, (int, float))
-                                            and 0 < thr < 1):
-                    err(f"{where}: interview.threshold must be a number in (0, 1) "
-                        f"(got {thr!r})")
-                ch = iv.get("challenges")
-                if ch is not None:
-                    if not isinstance(ch, list):
-                        err(f"{where}: interview.challenges must be a list")
-                    else:
-                        for c in ch:
-                            if not (isinstance(c, str) and CHALLENGE_RE.match(c)):
-                                err(f"{where}: bad challenge {c!r} "
-                                    "(expected `contrarian|simplifier|ontologist@<round>`)")
-                aa = iv.get("auto_assist")
-                if aa is not None and not isinstance(aa, bool):
-                    err(f"{where}: interview.auto_assist must be true/false")
+                else:
+                    if effective_fresh:
+                        err(f"{where}: a deep interview talks to the user — it cannot "
+                            "run in a fresh context")
+                    produces = st.get("produces")
+                    if not isinstance(produces, list):
+                        err(f"{where}: a deep interview's `produces` must be a list "
+                            "(otherwise the interview-log.md rule degrades to a "
+                            "substring test and a scalar silently passes)")
+                    elif "interview-log.md" not in produces:
+                        err(f"{where}: a deep interview must list `interview-log.md` "
+                            "in `produces` (the convergence ledger the gate reads)")
+                    thr = iv.get("threshold")
+                    if thr is not None and not (isinstance(thr, (int, float))
+                                                and 0 < thr < 1):
+                        err(f"{where}: interview.threshold must be a number in (0, 1) "
+                            f"(got {thr!r})")
+                    ch = iv.get("challenges")
+                    if ch is not None:
+                        if not isinstance(ch, list):
+                            err(f"{where}: interview.challenges must be a list")
+                        else:
+                            for c in ch:
+                                if not (isinstance(c, str) and CHALLENGE_RE.match(c)):
+                                    err(f"{where}: bad challenge {c!r} "
+                                        "(expected `contrarian|simplifier|ontologist@<round>`)")
+                    aa = iv.get("auto_assist")
+                    if aa is not None and not isinstance(aa, bool):
+                        err(f"{where}: interview.auto_assist must be true/false")
 
     return errors, warnings
 
