@@ -83,14 +83,15 @@ and "promote" the harness out of the run dir explicitly.
   },
   "history": [
     { "stage": "interview", "result": "pass", "gate": "approved", "at": "..." },
+    { "stage": "implement", "result": "fail", "gate": "ai", "at": "..." },
     { "stage": "review", "result": "pass", "gate": "approved", "at": "...", "agent": "fresh" }
   ]
 }
 ```
 
-`iterations[stage]` counts how many times a gate failure looped back into that stage; `total_iterations` is their sum, checked against `max_iterations` on every loopback. Happy-path stage runs are not counted.
+`iterations[stage]` counts how many times a gate failure looped back into that stage; `total_iterations` is their sum, checked against `max_iterations` on every loopback. Happy-path stage runs are not counted. Each such failure also appends one `result: "fail"` history entry (step 2c), so a loopback is recorded two consistent ways — a count in `iterations[stage]` and a dated entry in `history` (the latter is the source of `gate_failures_by_stage` for `/odin refine`).
 
-Each history entry's `gate` field records **how** the stage passed, using a fixed vocabulary so tools can count gates reliably: `gate: "ai"` for an `ai` gate that auto-passed; `gate: "ai-pending"` for an `ai+human` (or `human`) stage that passed AI judgment and is now awaiting approval (written at step 2d); and `gate: "approved"` when the human approves (written at step 1). An `ai+human` gate therefore appends **two** pass entries — `ai-pending` then `approved` — but is **one** gate: a consumer counting gates must treat the `ai-pending` entry and its later `approved` entry as a single human-approved gate, never as one AI gate plus one human gate.
+Each history entry carries a `result` (`pass` or `fail`); a `fail` entry marks a gate failure / loopback (step 2c). For a **pass**, the entry's `gate` field records **how** the stage passed, using a fixed vocabulary so tools can count gates reliably: `gate: "ai"` for an `ai` gate that auto-passed; `gate: "ai-pending"` for an `ai+human` (or `human`) stage that passed AI judgment and is now awaiting approval (written at step 2d); and `gate: "approved"` when the human approves (written at step 1). An `ai+human` gate therefore appends **two** pass entries — `ai-pending` then `approved` — but is **one** gate: a consumer counting gates must treat the `ai-pending` entry and its later `approved` entry as a single human-approved gate, never as one AI gate plus one human gate.
 
 The optional `interview` object is written only by a deep-interview stage (`interview.mode: deep`): it mirrors the convergence the engine is tracking in `interview-log.md` so `/odin-loop:odin status` can show it. Its four fields above — `threshold`, `rounds`, `ambiguity`, and `topology` — are the write contract (all four are what `/odin-loop:odin status` reads, so persist every one); finer detail such as per-component clarity stays in `interview-log.md`, not here. See `deep-interview.md` for the full procedure.
 
@@ -146,6 +147,12 @@ This is the core algorithm. Drive automatically, but **stop at human gates**.
 
    c. **On gate FAIL:**
       - Increment `iterations[stage]` and `total_iterations`.
+      - Append `{stage, result: "fail", gate, at}` to history — the counterpart to
+        the pass-path append in step 2d. Set `gate` to the mode that was judged
+        (`ai`, or `ai-pending` for an `ai+human`/`human` stage) — never `approved`,
+        which marks a human pass. This is what feeds `gate_failures_by_stage` for
+        `/odin refine` (Muninn); without it the documented loop would record the
+        loopback in `iterations` but leave no history trace of the failure.
       - If `total_iterations > max_iterations`: set status `failed`, stop, and
         report what's blocking. Do not loop forever.
       - Jump to `gate.on_fail` if set, else retry the same stage. Continue.
